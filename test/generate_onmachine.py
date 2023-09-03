@@ -18,7 +18,6 @@ MACHINE_LIST = [
 def git_pull_remote(to_connect):
     username = input("Enter your username: ")
     password = input("Enter your password: ")
-    command = input("Enter your command: ")
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     for machine_ix in to_connect:
@@ -30,7 +29,8 @@ def git_pull_remote(to_connect):
                 username=username,
                 password=password,
             )
-            command = "cd test && python3 generate_text.py"
+ 
+            command = "cd cs425_mp1 && cd test && python3 generate_text.py"
             stdin, stdout, stderr, = ssh_client.exec_command(command, get_pty=True)
             for line in iter(stdout.readline, ""):
                 print(line, end="")
