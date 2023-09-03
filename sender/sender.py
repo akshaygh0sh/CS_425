@@ -1,34 +1,54 @@
 import socket
+import argparse
+import time
 
-# Define the remote device's IP address and UDP port
-remote_ip = "REMOTE_DEVICE_IP_ADDRESS"
-remote_port = REMOTE_DEVICE_UDP_PORT
+MACHINE_LIST = [
+    "blank",
+    "fa23-cs425-5601.cs.illinois.edu",
+    "fa23-cs425-5602.cs.illinois.edu",
+    "fa23-cs425-5603.cs.illinois.edu",
+    "fa23-cs425-5604.cs.illinois.edu",
+    "fa23-cs425-5605.cs.illinois.edu",
+    "fa23-cs425-5606.cs.illinois.edu",
+    "fa23-cs425-5607.cs.illinois.edu",
+    "fa23-cs425-5608.cs.illinois.edu",
+    "fa23-cs425-5609.cs.illinois.edu",
+    "fa23-cs425-5610.cs.illinois.edu"
+]
 
-# Create a UDP socket
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def machine_arg_parser(args):
+    return [int(machine_ix) for machine_ix in args.split(',')]
 
-# Define the Linux command to execute
-linux_command = "ls -l /"
+def create_grep_files(machine_ix, search_pattern):
+    remote_port = 49152
+    # Create a UDP socket
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    commands = [
+        f"grep -n -H {search_pattern} machine.i.log > result.txt"
+    ]
+    for command in commands:
+        udp_socket.sendto(command.encode(), (MACHINE_LIST[machine_ix], remote_port))
 
-# Send the command to the remote device
-udp_socket.sendto(linux_command.encode(), (remote_ip, remote_port))
+    udp_socket.close()
 
-# Close the UDP socket
-udp_socket.close()
-import socket
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Search log files on remote machines.')
 
-# Define the remote device's IP address and UDP port
-remote_ip = "REMOTE_DEVICE_IP_ADDRESS"
-remote_port = 49152
+    # Add required arguments
+    parser.add_argument('-H', '--hostname', type=str, help='The current host name')
+    parser.add_argument('-t', '--target_machines', type=str, nargs='+', help='Target machine(s) to search on')
+    parser.add_argument('-p', '--pattern', type=str, help='Pattern to search for in log files')
 
-# Create a UDP socket
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    args = parser.parse_args()
 
-# Define the Linux command to execute
-linux_command = "ls -l /"
+    hostname = args.hostname
+    target_machines = machine_arg_parser(args.target_machines[0])
+    search_pattern = args.pattern
 
-# Send the command to the remote device
-udp_socket.sendto(linux_command.encode(), (remote_ip, remote_port))
+    start_time = time.perf_counter()
+    for machine_ix in target_machines:
+        create_grep_files(machine_ix, search_pattern)
+    end_time = time.perf_counter()
 
-# Close the UDP socket
-udp_socket.close()
+    execution_time = end_time - start_time
+    print(f"Fetched results for pattern '{search_pattern}' on machines {str(target_machines)} in {execution_time} seconds.")
