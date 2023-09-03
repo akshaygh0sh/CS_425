@@ -50,7 +50,7 @@ shakespearean_vocab = [
 num_sentences = 100000
 max_sentence_length = 10
 
-output_file = "machine.i.log"
+output_file = "../machine.i.log"
 hostname = socket.gethostname()
 last_two_chars = hostname[-18:-16]
 # Convert the last two characters to an integer
