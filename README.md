@@ -1,6 +1,8 @@
 # CS425_MP1
 
+For sender.py, -H is the hostname of the device (not currently used), -t is the target machines (e.x. "1,2,3" or "1", etc), and -p is the pattern to grep on the remote machines. Here's an example: python3 ./sender/sender.py -H fdas -t 1 -p "Thou".
 
+For receiver.py, just run python3 ./receiver/receiver.py.
 
 ## Getting started
 

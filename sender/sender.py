@@ -7,7 +7,7 @@ MACHINE_LIST = [
     "fa23-cs425-5601.cs.illinois.edu",
     "fa23-cs425-5602.cs.illinois.edu",
     "fa23-cs425-5603.cs.illinois.edu",
-    "fa23-cs425-5604.cs.illinois.edu",
+    "fa23-cs425-5604.cs.illinois.edu",  
     "fa23-cs425-5605.cs.illinois.edu",
     "fa23-cs425-5606.cs.illinois.edu",
     "fa23-cs425-5607.cs.illinois.edu",
@@ -45,6 +45,7 @@ def create_grep_files(machine_ix, search_pattern):
                 if e.errno == 11 or e.errno == 35:
                 # Non-blocking socket exception (Resource temporarily unavailable)
                 # This means there's no data available right now, continue the loop
+                
                     continue
         print(received_data)
 
