@@ -37,7 +37,7 @@ def create_grep_files(machine_ix, search_pattern):
                 data, sender_ip_addr = udp_socket.recvfrom(1024)
                 if not data or b'\x00' in data:
                     break
-                print(data)
+
                 received_data += data
                 if data.endswith(b"EOD"):
                     break
