@@ -19,10 +19,12 @@ MACHINE_LIST = [
 ]
 
 
-
+ssh_client = paramiko.SSHClient()
+ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 def signal_handler(sig, frame):
     global stop_requested
+    ssh_client.close()
     print("Received Ctrl+C. Stopping servers...")
     halt_clusters(MACHINE_LIST)
     stop_requested = True
@@ -32,9 +34,6 @@ signal.signal(signal.SIGINT, signal_handler)
 
 
 def halt_clusters(to_connect):
-    
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     for hostname in to_connect:
         try:
             
@@ -56,8 +55,7 @@ def halt_clusters(to_connect):
 
 def launch_cluster(to_connect):
     
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
     print(username)
     for machine_ix in to_connect:
         hostname = machine_ix
@@ -70,11 +68,10 @@ def launch_cluster(to_connect):
             )
            
             
-            ssh_client.exec_command("python3 ./receiver/receiver.py &")
-            
+            ssh_client.exec_command("cd cs425_mp1 ; python3 ./receiver/receiver.py &")
             print(f"Launched UDP receiver on {hostname}")
             
-            ssh_client.close()
+            
         except Exception as e:
             print(e)
 
