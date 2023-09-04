@@ -39,6 +39,8 @@ def create_grep_files(machine_ix, search_pattern):
                     break
                 print(data)
                 received_data += data
+                if data.endswith(b"EOD"):
+                    break
             except socket.timeout:
                 break  # Timeout reached, stop receiving
             except socket.error as e:
