@@ -35,7 +35,7 @@ def git_pull_remote(to_connect):
             ssh_client.exec_command(f"git config --global user.name {username}", get_pty=True)
             ssh_client.exec_command("git config --global --unset https.proxy", get_pty=True)
             ssh_client.exec_command("git config --global --unset http.proxy", get_pty=True)
-            git_clone_command = f"cd cs425_mp1 && git {command} https://{username}:{access_token}@gitlab.engr.illinois.edu/gdurand2/cs425_mp1"
+            git_clone_command = f"cd cs425_mp1 ; git {command} https://{username}:{access_token}@gitlab.engr.illinois.edu/gdurand2/cs425_mp1"
             stdin, stdout, stderr, = ssh_client.exec_command(git_clone_command, get_pty=True)
             for line in iter(stdout.readline, ""):
                 print(line, end="")

@@ -1,6 +1,11 @@
 import socket
 import subprocess
 
+# Function that is called when sender
+# requests the grep results file
+def process_get_result():
+    pass
+
 def receive_data():
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     local_ip = "0.0.0.0"
@@ -15,8 +20,10 @@ def receive_data():
         except subprocess.CalledProcessError as e:
             result = e.output
         
+        print(result)
         # Send command output to sender
-        udp_socket.sendto(result, sender_ip_addr)
+        bytes_sent = udp_socket.sendto(result, sender_ip_addr)
+        # print(bytes_sent)
 
 if __name__ == "__main__":
     receive_data()

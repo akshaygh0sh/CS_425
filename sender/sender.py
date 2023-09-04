@@ -20,14 +20,33 @@ def machine_arg_parser(args):
     return [int(machine_ix) for machine_ix in args.split(',')]
 
 def create_grep_files(machine_ix, search_pattern):
+    local_ip = "0.0.0.0"
+    local_udp_port = 49152
     remote_port = 49152
     # Create a UDP socket
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    machine = MACHINE_LIST[machine_ix]
     commands = [
-        f"grep -n -H {search_pattern} machine.i.log > result.txt"
+        f"grep -n -H {search_pattern} machine.i.log"
     ]
     for command in commands:
         udp_socket.sendto(command.encode(), (MACHINE_LIST[machine_ix], remote_port))
+        received_data = b""
+        while True:
+            try:
+                data, sender_ip_addr = udp_socket.recvfrom(1024)
+                if not data or b'\x00' in data:
+                    break
+                print(data)
+                received_data += data
+            except socket.timeout:
+                break  # Timeout reached, stop receiving
+            except socket.error as e:
+                if e.errno == 11 or e.errno == 35:
+                # Non-blocking socket exception (Resource temporarily unavailable)
+                # This means there's no data available right now, continue the loop
+                    continue
+        print(received_data)
 
     udp_socket.close()
 
