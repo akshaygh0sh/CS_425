@@ -1,6 +1,6 @@
 import paramiko
 from github import Github
-
+import getpass
 MACHINE_LIST = [
     "blank",
     "fa23-cs425-5601.cs.illinois.edu",
@@ -17,7 +17,7 @@ MACHINE_LIST = [
 
 def git_pull_remote(to_connect):
     username = input("Enter your username: ")
-    password = input("Enter your password: ")
+    password = getpass.getpass("Enter your password: ")
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     for machine_ix in to_connect:
