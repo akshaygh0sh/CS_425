@@ -24,37 +24,33 @@ def create_grep_files(machine_ix, search_pattern):
     local_udp_port = 49152
     remote_port = 49152
     # Create a UDP socket
-    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     machine = MACHINE_LIST[machine_ix]
+    tcp_socket.connect((machine, remote_port))
     commands = [
         f"grep -n -H \"{search_pattern}\" machine.i.log"
     ]
     for command in commands:
         print(command)
-        udp_socket.sendto(command.encode(), (MACHINE_LIST[machine_ix], remote_port))
+        tcp_socket.sendall(command.encode())
         received_data = b""
         while True:
             try:
-                data, sender_ip_addr = udp_socket.recvfrom(1024)
+                data = tcp_socket.recv(4096)
                 if not data or b'\x00' in data:
                     break
-
+                # print(data.decode(), end ="")
                 received_data += data
                 if data.endswith(b"EOD"):
                     break
-            except socket.timeout:
-                break  # Timeout reached, stop receiving
-            except socket.error as e:
-                if e.errno == 11 or e.errno == 35:
-                # Non-blocking socket exception (Resource temporarily unavailable)
-                # This means there's no data available right now, continue the loop
-                
-                    continue
-        print("\n\n\n")
+            except Exception as e:
+                print(f"Error while connecting to machine {machine}: {str(e)}")
+            finally:
+                tcp_socket.close()
+    
         print("Results for machine #", machine_ix)
         print(received_data.decode())
 
-    udp_socket.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Search log files on remote machines.')
