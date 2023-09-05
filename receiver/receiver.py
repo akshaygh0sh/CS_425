@@ -20,10 +20,14 @@ def receive_data():
             print(result)
             result = result.decode() + "EOD"
             result = result.encode()
-       
+
+            chunk_size = 1024
             bytes_sent = 0
-            bytes_sent += client_socket.send(result)
-            print("Size of data:", len(result))
+            for i in range(0, len(result), chunk_size):
+                chunk = result[i:i + chunk_size]
+                bytes_sent += client_socket.send(chunk)
+                print("Bytes sent:", bytes_sent)
+            print("Size of data:", len(chunk))
             print("Size of sent bytes:", bytes_sent)
         except Exception as e:
             print(f"Error: {str(e)}")
