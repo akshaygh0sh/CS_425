@@ -1,6 +1,7 @@
 import socket
 import argparse
 import time
+import threading
 
 MACHINE_LIST = [
     "blank",
@@ -19,7 +20,7 @@ MACHINE_LIST = [
 def machine_arg_parser(args):
     return [int(machine_ix) for machine_ix in args.split(',')]
 
-def create_grep_files(machine_ix, search_pattern):
+def create_grep_files(machine_ix, search_pattern, print_lock):
     local_ip = "localhost"
     local_udp_port = 49152
     remote_port = 49152
@@ -27,26 +28,30 @@ def create_grep_files(machine_ix, search_pattern):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
     machine = MACHINE_LIST[machine_ix]
-    tcp_socket.connect((machine, remote_port))
-    commands = [
-        f"grep -n -H \"{search_pattern}\" machine.i.log > result.txt"
-    ]
-    for command in commands:
-        print(command)
-        tcp_socket.sendall(command.encode())
-        received_data = b""
-        while True:
-            try:
-                data = tcp_socket.recv(8192)
-                # print(data.decode(), end ="")
-                received_data += data
-                if not data or data.endswith(b'\x00'):
-                    break
-            except Exception as e:
-                print(f"Error while connecting to machine {machine}: {str(e)}")
-    
-        print("Results for machine #", machine_ix)
-        print(received_data.decode())
+    try:
+
+        tcp_socket.connect((machine, remote_port))
+        commands = [
+            f"grep -n -H \"{search_pattern}\" machine.i.log > result.txt"
+        ]
+        for command in commands:
+            tcp_socket.sendall(command.encode())
+            received_data = b""
+            while True:
+                try:
+                    data = tcp_socket.recv(8192)
+                    # print(data.decode(), end ="")
+                    received_data += data
+                    if not data or data.endswith(b'\x00'):
+                        break
+                except Exception as e:
+                    print(f"Error while connecting to machine {machine}: {str(e)}")
+            
+            # Synchronize print statements
+            with print_lock:
+                print("Results for machine #", machine_ix)
+                print(received_data.decode())
+    finally:
         tcp_socket.close()
 
 
@@ -64,9 +69,16 @@ if __name__ == "__main__":
     target_machines = machine_arg_parser(args.target_machines[0])
     search_pattern = args.pattern
 
+    print_lock = threading.Lock()
+    threads = []
     start_time = time.perf_counter()
     for machine_ix in target_machines:
-        create_grep_files(machine_ix, search_pattern)
+        thread = threading.Thread(target=create_grep_files, args=(machine_ix, search_pattern, print_lock))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
     end_time = time.perf_counter()
 
     execution_time = end_time - start_time
