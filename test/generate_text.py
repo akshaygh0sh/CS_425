@@ -37,6 +37,11 @@ shakespearean_vocab = [
     "naught",
     "pox",
     "anon",
+    "pious",
+    "dexterously",
+    "lonely",
+
+    "gloomy",
     "by my troth",
     "by the pricking of my thumbs",
     "a plague on both your houses",
@@ -48,7 +53,7 @@ shakespearean_vocab = [
 
 # Number of sentences to generate
 num_sentences = 300000
-max_sentence_length = 50
+max_sentence_length = 30
 
 output_file = "../machine.i.log"
 hostname = socket.gethostname()
