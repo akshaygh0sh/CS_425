@@ -59,13 +59,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Search log files on remote machines.')
 
     # Add required arguments
-    parser.add_argument('-H', '--hostname', type=str, help='The current host name')
     parser.add_argument('-t', '--target_machines', type=str, nargs='+', help='Target machine(s) to search on')
     parser.add_argument('-p', '--pattern', type=str, help='Pattern to search for in log files')
 
     args = parser.parse_args()
-
-    hostname = args.hostname
+    
     target_machines = machine_arg_parser(args.target_machines[0])
     search_pattern = args.pattern
 
