@@ -25,10 +25,11 @@ def create_grep_files(machine_ix, search_pattern):
     remote_port = 49152
     # Create a TCP socket
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
     machine = MACHINE_LIST[machine_ix]
     tcp_socket.connect((machine, remote_port))
     commands = [
-        f"grep -n -H \"{search_pattern}\" machine.i.log"
+        f"grep -n -H \"{search_pattern}\" machine.i.log > result.txt"
     ]
     for command in commands:
         print(command)
@@ -36,7 +37,7 @@ def create_grep_files(machine_ix, search_pattern):
         received_data = b""
         while True:
             try:
-                data = tcp_socket.recv(1500)
+                data = tcp_socket.recv(8192)
                 # print(data.decode(), end ="")
                 received_data += data
                 if not data or data.endswith(b'\x00'):
@@ -44,7 +45,6 @@ def create_grep_files(machine_ix, search_pattern):
             except Exception as e:
                 print(f"Error while connecting to machine {machine}: {str(e)}")
     
-
         print("Results for machine #", machine_ix)
         print(received_data.decode())
         tcp_socket.close()

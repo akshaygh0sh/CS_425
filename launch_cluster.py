@@ -47,7 +47,7 @@ def halt_clusters(to_connect):
             ssh_client.exec_command("pkill -f 'python3 ./receiver/receiver.py'")
             ssh_client.close()
 
-            print(f"Stopped UDP receiver on {hostname}")
+            print(f"Stopped TCP receiver on {hostname}")
 
         except Exception as e:
             print(f"Failed to connect to {hostname}: {e}")
@@ -67,7 +67,7 @@ def launch_cluster(to_connect):
            
             
             ssh_client.exec_command("cd cs425_mp1 ; python3 ./receiver/receiver.py &")
-            print(f"Launched UDP receiver on {hostname}")
+            print(f"Launched TCP receiver on {hostname}")
             
             
         except Exception as e:
