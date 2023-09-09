@@ -47,8 +47,8 @@ shakespearean_vocab = [
 ]
 
 # Number of sentences to generate
-num_sentences = 100000
-max_sentence_length = 10
+num_sentences = 300000
+max_sentence_length = 50
 
 output_file = "../machine.i.log"
 hostname = socket.gethostname()

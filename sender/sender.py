@@ -20,10 +20,10 @@ def machine_arg_parser(args):
     return [int(machine_ix) for machine_ix in args.split(',')]
 
 def create_grep_files(machine_ix, search_pattern):
-    local_ip = "0.0.0.0"
+    local_ip = "localhost"
     local_udp_port = 49152
     remote_port = 49152
-    # Create a UDP socket
+    # Create a TCP socket
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     machine = MACHINE_LIST[machine_ix]
     tcp_socket.connect((machine, remote_port))
@@ -36,20 +36,18 @@ def create_grep_files(machine_ix, search_pattern):
         received_data = b""
         while True:
             try:
-                data = tcp_socket.recv(4096)
-                if not data or b'\x00' in data:
-                    break
+                data = tcp_socket.recv(1500)
                 # print(data.decode(), end ="")
                 received_data += data
-                if data.endswith(b"EOD"):
+                if not data or data.endswith(b'\x00'):
                     break
             except Exception as e:
                 print(f"Error while connecting to machine {machine}: {str(e)}")
-            finally:
-                tcp_socket.close()
     
+
         print("Results for machine #", machine_ix)
         print(received_data.decode())
+        tcp_socket.close()
 
 
 if __name__ == "__main__":
