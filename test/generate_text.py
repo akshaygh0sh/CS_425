@@ -55,20 +55,25 @@ shakespearean_vocab = [
 num_sentences = 300000
 max_sentence_length = 30
 
-output_file = "../machine.i.log"
+output_file = "machine.i.log"
 hostname = socket.gethostname()
 last_two_chars = hostname[-18:-16]
 # Convert the last two characters to an integer
 last_two_digits_as_int = int(last_two_chars)
 
+print(last_two_digits_as_int)
 # Multiply the integer by 10,000
 result = last_two_digits_as_int * 10000
 # Generate random sentences and write them to a file
 with open(output_file, "w") as file:
+    i = 0
     for i in range(num_sentences):
         sentence_length = random.randint(1, max_sentence_length)
         sentence = " ".join(random.sample(shakespearean_vocab, sentence_length))
+        
         if i == result:
             non_shakespearean_text = "Im a Robot Beep Boop"
             file.write(non_shakespearean_text + "\n")
+        if i+1 % 10 == last_two_digits_as_int:
+            sentence += " csmongers"
         file.write(sentence.capitalize() + ".\n")
