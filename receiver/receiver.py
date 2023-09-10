@@ -34,9 +34,9 @@ def receive_data():
                     bytes_sent += client_socket.send(chunk) 
                 print("Size of sent bytes:", bytes_sent)
                 client_socket.shutdown(socket.SHUT_WR)
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            data = str(e).encode() + b'\x00'
+        except subprocess.CalledProcessError as e:
+            print(f"Error: {e.output}")
+            data = e.output.encode() + b'\x00'
             client_socket.send(data)
 
 if __name__ == "__main__":
