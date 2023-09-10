@@ -60,7 +60,7 @@ def create_grep_files(machine_ix, search_pattern, print_lock, is_demo):
             # Synchronize print statements
             with print_lock:
                 machine_line_count = len(received_data.split(b'\n')) -1
-                print("Results for machine #", machine_ix, " number of maching lines", machine_line_count )
+                print("Results for machine #", machine_ix, " number of matching lines", machine_line_count)
                 total_matching_lines += machine_line_count
                 print(received_data.decode())
     except socket.error as e:
