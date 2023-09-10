@@ -36,7 +36,7 @@ def receive_data():
                 client_socket.shutdown(socket.SHUT_WR)
         except Exception as e:
             print(f"Error: {str(e)}")
-            client_socket.send(e)
+            client_socket.send(str(e).decode())
 
 if __name__ == "__main__":
     receive_data()  
