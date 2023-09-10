@@ -52,7 +52,7 @@ shakespearean_vocab = [
 ]
 
 # Number of sentences to generate
-num_sentences = 300000
+num_sentences = 500000
 max_sentence_length = 30
 
 output_file = "machine.i.log"
@@ -62,18 +62,31 @@ last_two_chars = hostname[-18:-16]
 last_two_digits_as_int = int(last_two_chars)
 
 print(last_two_digits_as_int)
-# Multiply the integer by 10,000
-result = last_two_digits_as_int * 10000
-# Generate random sentences and write them to a file
+
 with open(output_file, "w") as file:
-    i = 0
+    
+    
+    rare_counter = last_two_digits_as_int - 1
+    somewhat_frequent_counter = last_two_digits_as_int - 1
+    frequent_counter = last_two_digits_as_int - 1
+
     for i in range(num_sentences):
         sentence_length = random.randint(1, max_sentence_length)
         sentence = " ".join(random.sample(shakespearean_vocab, sentence_length))
         
-        if i == result:
-            non_shakespearean_text = "Im a Robot Beep Boop"
-            file.write(non_shakespearean_text + "\n")
-        if i+1 % 10 == last_two_digits_as_int:
-            sentence += " csmongers"
+        if rare_counter == 50000:
+            sentence += "rare"
+            rare_counter = 0
+            #displays 9 times
+        if somewhat_frequent_counter == 10000:
+            sentence += "somewhat"
+            somewhat_frequent_counter = 0
+            #dispays 499 times
+        if frequent_counter == 10:
+            sentence += "frequent"
+            frequent_counter = 0
+            #displays 49999 times
+        rare_counter += 1
+        somewhat_frequent_counter += 1
+        frequent_counter += 1
         file.write(sentence.capitalize() + ".\n")
