@@ -36,7 +36,7 @@ def receive_data():
                 client_socket.shutdown(socket.SHUT_WR)
         except subprocess.CalledProcessError as e:
             print(f"Error: {e.output}")
-            data = e.output.encode() + b'\x00'
+            data = e.output + b'\x00'
             client_socket.send(data)
 
 if __name__ == "__main__":
