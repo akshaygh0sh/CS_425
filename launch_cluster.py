@@ -79,7 +79,11 @@ def main():
     username = input("Enter your username: ")
     global password 
     password = getpass.getpass("Enter your password: ")
-    launch_cluster(MACHINE_LIST)
+    
+    machines_indexs = (input("Enter machines: ").split())
+    machines_indexs = [int(x) for x in machines_indexs]
+    selected_machines = [MACHINE_LIST[i] for i in machines_indexs]
+    launch_cluster(selected_machines)
     
     stop_requested = False
     try:
