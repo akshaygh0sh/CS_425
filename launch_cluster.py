@@ -26,7 +26,7 @@ def signal_handler(sig, frame):
     global stop_requested
     ssh_client.close()
     print("Received Ctrl+C. Stopping servers...")
-    halt_clusters(MACHINE_LIST)
+    halt_clusters(selected_machines)
     stop_requested = True
     sys.exit(0)
     
@@ -81,6 +81,7 @@ def main():
     
     machines_indexs = (input("Enter machines: ").split())
     machines_indexs = [int(x) for x in machines_indexs]
+    global selected_machines
     selected_machines = [MACHINE_LIST[i] for i in machines_indexs]
     launch_cluster(selected_machines)
     
