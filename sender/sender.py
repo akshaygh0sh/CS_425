@@ -34,7 +34,6 @@ def create_grep_files(machine_ix, search_pattern, print_lock, is_demo):
     machine = MACHINE_LIST[machine_ix]
     
     try:
-
         tcp_socket.connect((machine, remote_port))
         commands = []
         
@@ -42,7 +41,7 @@ def create_grep_files(machine_ix, search_pattern, print_lock, is_demo):
             command = f"grep -n -H \"{search_pattern}\" ../vm{machine_ix}.log > result.txt"
         else:
             command = f"grep -n -H \"{search_pattern}\" machine.i.log > result.txt"
-        print(command)
+
         commands.append(command)
         for command in commands:
             tcp_socket.sendall(command.encode())
@@ -56,6 +55,7 @@ def create_grep_files(machine_ix, search_pattern, print_lock, is_demo):
                         break
                 except Exception as e:
                     print(f"Error while connecting to machine {machine}: {str(e)}")
+                    return
             
             # Synchronize print statements
             with print_lock:
@@ -64,7 +64,7 @@ def create_grep_files(machine_ix, search_pattern, print_lock, is_demo):
                 total_matching_lines += machine_line_count
                 print(received_data.decode())
     except socket.error as e:
-        print("oops can't connect to: ", machine, " we get error", e)
+        print("Could not connect to: ", machine, ": ", e)
     finally:
         tcp_socket.close()
         
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     target_machines = machine_arg_parser(args.target_machines[0])
     search_pattern = args.pattern
     is_demo = args.demo
-    print(is_demo)
+
     print_lock = threading.Lock()
     threads = []
     start_time = time.perf_counter()
