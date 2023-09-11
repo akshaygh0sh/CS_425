@@ -40,7 +40,6 @@ shakespearean_vocab = [
     "pious",
     "dexterously",
     "lonely",
-
     "gloomy",
     "by my troth",
     "by the pricking of my thumbs",
