@@ -16,7 +16,10 @@ MACHINE_LIST = [
     "fa23-cs425-5609.cs.illinois.edu",
     "fa23-cs425-5610.cs.illinois.edu"
 ]
+
+BUFFER_SIZE = 20_000_000
 total_matching_lines = 0
+
 def machine_arg_parser(args):
     return [int(machine_ix) for machine_ix in args.split(',')]
 
@@ -25,10 +28,8 @@ def create_grep_files(machine_ix, grep_command, print_lock, is_demo):
     remote_port = 49152
     # Create a TCP socket
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
     timeout = 5
     tcp_socket.settimeout(timeout)
-    tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
     machine = MACHINE_LIST[machine_ix]
     
     try:
@@ -45,7 +46,7 @@ def create_grep_files(machine_ix, grep_command, print_lock, is_demo):
             received_data = b""
             while True:
                 try:
-                    data = tcp_socket.recv(8192)
+                    data = tcp_socket.recv(BUFFER_SIZE)
                     # print(data.decode(), end ="")
                     received_data += data
                     if not data or data.endswith(b'\x00'):
@@ -59,7 +60,7 @@ def create_grep_files(machine_ix, grep_command, print_lock, is_demo):
                 machine_line_count = len(received_data.split(b'\n')) -1
                 print(f"Results for machine #{machine_ix} ({machine_line_count} matching lines):")
                 total_matching_lines += machine_line_count
-                print(received_data.decode())
+                print(received_data[:-1].decode())
     except socket.error as e:
         print("Could not connect to: ", machine, ": ", e)
     finally:
