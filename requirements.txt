@@ -1,3 +1,4 @@
+attrs==22.2.0
 Babel==2.5.1
 bcrypt==4.0.1
 beautifulsoup4==4.6.3
@@ -16,6 +17,8 @@ gpg==1.13.1
 html5lib==0.999999999
 idna==2.5
 immutables==0.15
+importlib-metadata==4.8.3
+iniconfig==1.1.1
 iniparse==0.4
 isc==2.0
 Jinja2==2.10.1
@@ -26,12 +29,15 @@ M2Crypto==0.35.2
 MarkupSafe==0.23
 msgpack==0.6.2
 nftables==0.1
+packaging==21.3
 paramiko==3.3.1
 perf==0.1
 pexpect==4.3.1
+pluggy==1.0.0
 ply==3.9
 psutil==5.4.3
 ptyprocess==0.5.2
+py==1.11.0
 pycairo==1.16.3
 pycparser==2.21
 pycurl==7.43.0.2
@@ -41,7 +47,9 @@ PyGObject==3.28.3
 pyinotify==0.9.6
 PyJWT==2.4.0
 PyNaCl==1.5.0
+pyparsing==3.1.1
 PySocks==1.6.8
+pytest==7.0.1
 python-dateutil==2.6.1
 python-dmidecode==3.12.2
 python-linux-procfs==0.7.0
@@ -65,6 +73,9 @@ SSSDConfig==2.8.2
 subscription-manager==1.28.36
 syspurpose==1.28.36
 systemd-python==234
+tomli==1.2.3
+typing_extensions==4.1.1
 urllib3==1.24.2
 webencodings==0.5.1
 wrapt==1.15.0
+zipp==3.6.0
