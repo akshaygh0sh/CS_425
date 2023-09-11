@@ -60,7 +60,7 @@ def test_somewhat_frequent():
             
             return_code = process.wait()
             results, seconds = parse_results()
-            solution = {'5': '500', '6': '500', '7': '500','8': '500'}
+            solution = {'5': '50', '6': '50', '7': '50','8': '50'}
             total_time += seconds
             assert solution['5'] == results['5']
             assert solution['6'] == results['6']
