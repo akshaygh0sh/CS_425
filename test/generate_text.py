@@ -65,7 +65,7 @@ MACHINE_LIST = [
 ]
 
 # Number of sentences to generate
-num_sentences = 500000
+num_sentences = 500001
 max_sentence_length = 30
 
 output_file = "../machine.i.log"
@@ -92,23 +92,23 @@ with open(output_file, "w") as file:
         if rare_counter == 50000:
             sentence += "rare"
             rare_counter = 0
-            #displays 9 times
+            #displays 10 times
         if somewhat_frequent_counter == 10000:
             sentence += "somewhat"
             somewhat_frequent_counter = 0
-            #dispays 499 times
+            #dispays 500 times
         if sing_counter == 100:
             sentence += MACHINE_LIST[last_two_digits_as_int]
             sing_counter = 0
-            #displays MACHINE_LIST[last_two_digits_as_int] 4999 times
+            #displays MACHINE_LIST[last_two_digits_as_int] 5000 times
         if frequent_counter == 10:
             sentence += "frequent"
             frequent_counter = 0
-            #displays 49999 times
+            #displays 50000 times
         if odd_counter == 100 and last_two_digits_as_int % 2 != 0:
             sentence += "georges"
             odd_counter = 0
-            #displays georges 4999 times on odd numbered machines only
+            #displays georges 5000 times on odd numbered machines only
             
         sing_counter += 1
         rare_counter += 1
