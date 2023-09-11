@@ -11,6 +11,10 @@ If provided, the -d flag will use the provided vm1.log, vm2.log, etc files locat
 
 If the -d flag is not provided, the code will run with the machine.i.log files located inside the repository (i.e. within this cs425_mp1 directory). If these files are not found, obviously the grep command will not succeed.
 
+As an example, if I wanted to get the output of "grep -n -H "GET"" on the provided vm1.log, vm2.log, etc. files on machines 1,2,3,4,5,6,7,8,9, and 10, I would call sender.py as follows:
+
+    python3 sender/sender.py -t 1,2,3,4,5,6,7,8,9,10 -c "grep -n -H \"GET\"" -d.
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
