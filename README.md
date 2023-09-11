@@ -1,5 +1,6 @@
 # CS425_MP1
 
+## Instructions
 First clone the GitHub repository.
 
 To start the server code (receiver/receiver.py), simply start the Python script with "python3 receiver/receiver.py".

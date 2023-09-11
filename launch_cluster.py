@@ -80,7 +80,7 @@ def main():
     machines_indexs = (input("Enter machines: ").split())
     machines_indexs = [int(x) for x in machines_indexs]
     global selected_machines
-    selected_machines = [MACHINE_LIST[i] for i in machines_indexs]
+    selected_machines = [MACHINE_LIST[i-1] for i in machines_indexs]
     launch_cluster(selected_machines)
     
     stop_requested = False
