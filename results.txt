@@ -5007,4 +5007,4 @@ machine.i.log:499896:Thither prithee hence prithee all that glitters is not gold
 machine.i.log:499996:Forsooth pox all that glitters is not gold anon by the pricking of my thumbs naught by my troth dexterously verily lonely thee mine to thine own self be true thou methinks thy fie ye hence a plague on both your houses sirrah oft prithee pious art hark nay gentle thineraresomewhatfa23-cs425-5606.cs.illinois.edufrequent.
 
 Total number of matching lines 5000
-Fetched results for pattern 'grep -n -H "fa23-cs425-5606.cs.illinois.edu"' on machines [5, 6, 7, 8] in 0.0670141179998609 seconds.
+Fetched results for pattern 'grep -n -H "fa23-cs425-5606.cs.illinois.edu"' on machines [5, 6, 7, 8] in 0.0682782000003499 seconds.

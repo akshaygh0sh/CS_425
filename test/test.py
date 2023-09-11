@@ -11,7 +11,7 @@ def test_rare():
     
     total_time = 0
     with open("test/test_results/test_rare_results", "w") as results_file:
-        for i in range(5):
+        for i in range(25):
             command = f"python3 ./sender/sender.py -t 5,6,7,8 -c 'grep -n -H \"rare\"' > results.txt"   # Replace with the actual command
 
             # Run the command and capture its output
@@ -46,7 +46,7 @@ def test_somewhat_frequent():
     
     total_time = 0
     with open("test/test_results/test_somewhat_frequent", "w") as results_file:
-        for i in range(5):
+        for i in range(100):
             command = f"python3 ./sender/sender.py -t 5,6,7,8 -c 'grep -n -H \"somewhat\"' > results.txt"   # Replace with the actual command
 
             # Run the command and capture its output
@@ -77,7 +77,7 @@ def test_frequent():
     
     total_time = 0
     with open("test/test_results/test_frequent", "w") as results_file:
-        for i in range(5):
+        for i in range(100):
             command = f"python3 ./sender/sender.py -t 5,6,7,8 -c 'grep -n -H \"frequent\"' > results.txt"   # Replace with the actual command
 
             # Run the command and capture its output
@@ -108,7 +108,7 @@ def test_odd_machines():
     
     total_time = 0
     with open("test/test_results/test_odd_machines", "w") as results_file:
-        for i in range(5):
+        for i in range(100):
             command = f"python3 ./sender/sender.py -t 5,6,7,8 -c 'grep -n -H \"georges\"' > results.txt"   # Replace with the actual command
 
             # Run the command and capture its output
@@ -139,7 +139,7 @@ def test_machine_6():
     
     total_time = 0
     with open("test/test_results/test_machine_6", "w") as results_file:
-        for i in range(5):
+        for i in range(100):
             command = f"python3 ./sender/sender.py -t 5,6,7,8 -c 'grep -n -H \"fa23-cs425-5606.cs.illinois.edu\"' > results.txt"   # Replace with the actual command
 
             # Run the command and capture its output
