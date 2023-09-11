@@ -17,6 +17,7 @@ MACHINE_LIST = [
     "fa23-cs425-5610.cs.illinois.edu"
 ]
 
+# Chunk size used when receiving data
 BUFFER_SIZE = 20_000_000
 total_matching_lines = 0
 
@@ -44,6 +45,7 @@ def create_grep_files(machine_ix, grep_command, print_lock, is_demo):
         for command in commands:
             tcp_socket.sendall(command.encode())
             received_data = b""
+            # Wait for data, receive in chunks
             while True:
                 try:
                     data = tcp_socket.recv(BUFFER_SIZE)
@@ -82,6 +84,7 @@ if __name__ == "__main__":
     grep_command = args.command
     is_demo = args.demo
 
+    # Initalize threads
     print_lock = threading.Lock()
     threads = []
     start_time = time.perf_counter()

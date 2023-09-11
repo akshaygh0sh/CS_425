@@ -19,6 +19,7 @@ def receive_data():
 
             result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 
+            # Send result back to client
             print("Size of grep result", os.path.getsize("result.txt"))
             with open("result.txt", 'rb') as grep_output:
                 result = grep_output.read()
@@ -26,6 +27,7 @@ def receive_data():
                 client_socket.sendall(result)
                 client_socket.shutdown(socket.SHUT_WR)
         except subprocess.CalledProcessError as e:
+            # Report error back to client
             print(e)
             print(f"Error: {e.output}")
             data = e.output + b'\x00' if e.output else b'\x00'

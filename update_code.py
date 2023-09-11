@@ -3,7 +3,6 @@ from github import Github
 import getpass
 
 MACHINE_LIST = [
-    "blank",
     "fa23-cs425-5601.cs.illinois.edu",
     "fa23-cs425-5602.cs.illinois.edu",
     "fa23-cs425-5603.cs.illinois.edu",
@@ -16,6 +15,7 @@ MACHINE_LIST = [
     "fa23-cs425-5610.cs.illinois.edu"
 ]
 
+# Clone code on each machine
 def git_pull_remote(to_connect):
     username = input("Enter your username: ")
     password = getpass.getpass("Enter your password: ")
@@ -31,6 +31,7 @@ def git_pull_remote(to_connect):
                 username=username,
                 password=password,
             )
+            # Delete folder and then clone
             ssh_client.exec_command(f"git config --global user.email {username}@illinois.edu", get_pty=True)
             ssh_client.exec_command(f"git config --global user.name {username}", get_pty=True)
             ssh_client.exec_command("git config --global --unset https.proxy", get_pty=True)

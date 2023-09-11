@@ -5,7 +5,6 @@ import sys
 import getpass
 
 MACHINE_LIST = [
-    "blank",
     "fa23-cs425-5601.cs.illinois.edu",
     "fa23-cs425-5602.cs.illinois.edu",
     "fa23-cs425-5603.cs.illinois.edu",
@@ -17,7 +16,6 @@ MACHINE_LIST = [
     "fa23-cs425-5609.cs.illinois.edu",
     "fa23-cs425-5610.cs.illinois.edu"
 ]
-
 
 ssh_client = paramiko.SSHClient()
 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -32,7 +30,7 @@ def signal_handler(sig, frame):
     
 signal.signal(signal.SIGINT, signal_handler)
 
-
+# Shutdown servers on each remote machine
 def halt_clusters(to_connect):
     for hostname in to_connect:
         try:
@@ -52,7 +50,7 @@ def halt_clusters(to_connect):
         except Exception as e:
             print(f"Failed to connect to {hostname}: {e}")
 
-
+# Launch servers on each remote machine
 def launch_cluster(to_connect):
     for machine_ix in to_connect:
         hostname = machine_ix
