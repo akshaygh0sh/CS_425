@@ -74,7 +74,9 @@ class Node:
     # in the listen function when we receive a stale gossip/potential repeat,
     # don't regossip the message to other machines
     def gossip(self, membership_list):
-        pass
+        machine_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        machine_list.remove(self.current_machine_ix)
+        
     
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
@@ -88,7 +90,6 @@ class Node:
     def leave_group(self):
         # Remove current node from membership list and 
         # gossip to other machines (so they update)
-        ...
         # Reset membership list
         self.member_list = {}
 
