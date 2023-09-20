@@ -113,6 +113,7 @@ def process_input(node, command):
         return node.get_membership_list()
     elif (command == "list_self"):
         return node.id
+    # Just to test, remove later
     elif (command.startswith("send")):
         split_ix = command.find("send ")
         node.send(2, command[split_ix + 5:])
