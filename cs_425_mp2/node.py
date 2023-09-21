@@ -147,7 +147,7 @@ class Node:
             udp_socket.close()
     
     def get_membership_list(self):
-        return self.member_list
+        return list(self.member_list.keys())
 
 def process_input(node, command):
     if (command == "list_mem"):
