@@ -86,7 +86,8 @@ class Node:
             try:
                 local_time = int(time.time())
                 if (local_time % self.HEARBEAT_INTERVAL == 0):
-                    self.member_list[self.id]["heartbeat_counter"] += 1
+                    if (self.id in self.member_list):
+                        self.member_list[self.id]["heartbeat_counter"] += 1
                     self.gossip(self.member_list)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
