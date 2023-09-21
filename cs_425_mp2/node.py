@@ -60,6 +60,7 @@ class Node:
                 # Receive the command from the client
                 data, client_address = udp_socket.recvfrom(8096)
                 data = data.decode()
+                print("Received: ", data)
                 data = json.loads(data)
                 local_time = int(time.time())
                 
@@ -122,7 +123,7 @@ class Node:
         remote_port = 49153
     
         try:
-            udp_socket.sendto(str(message).encode(), (machine, remote_port))
+            udp_socket.sendto(json.dumps(message).encode(), (machine, remote_port))
         except socket.error as e:
             print("Could not connect to: ", machine, ": ", e)
         finally:
