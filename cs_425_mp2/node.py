@@ -90,25 +90,24 @@ class Node:
             try:
                 local_time = int(time.time())
                 # Only send heartbeats if the node has "joined" the group
-                with self.is_active_lock:
-                    if self.is_active:
-                        if (self.id in self.member_list):
-                            self.member_list[self.id]["heartbeat_counter"] += 1
-                            self.member_list[self.id]["timestamp"] = local_time
+                if self.is_active:
+                    if (self.id in self.member_list):
+                        self.member_list[self.id]["heartbeat_counter"] += 1
+                        self.member_list[self.id]["timestamp"] = local_time
+                    
+                    # Prune membership list - delete failed nodes
+                    with self.member_list_lock:
+                        stale_entries = []
+                        for machine_id in self.member_list.keys():
+                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                            # # Node has failed, remove from membership list entirely
+                            if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                                stale_entries.append(machine_id)
                         
-                        # Prune membership list - delete failed nodes
-                        with self.member_list_lock:
-                            stale_entries = []
-                            for machine_id in self.member_list.keys():
-                                time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                                # # Node has failed, remove from membership list entirely
-                                if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                                    stale_entries.append(machine_id)
-                            
-                            for entry in stale_entries:
-                                del self.member_list[entry]
-                            self.gossip(self.member_list)
-                        time.sleep(self.HEARBEAT_INTERVAL)
+                        for entry in stale_entries:
+                            del self.member_list[entry]
+                        self.gossip(self.member_list)
+                    time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
 
