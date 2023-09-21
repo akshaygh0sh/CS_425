@@ -21,6 +21,8 @@ class Node:
 
     # Set heartbeat interval to 2 seconds
     HEARBEAT_INTERVAL = 2
+    T_FAIL = 2
+    T_CLEANUP = 2
 
     def __init__(self):
         self.version_number = -1
@@ -43,7 +45,7 @@ class Node:
     # Update the ID of the node (used for when attempting to join membership list)
     def update_id(self):
         self.version_number += 1
-        return f"{self.ip}@{self.current_machine_ix}:{self.version_number}"
+        return f"{self.ip}@{self.version_number}:{self.current_machine_ix}"
 
     def listen(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -61,12 +63,25 @@ class Node:
                 data = json.loads(data)
                 local_time = int(time.time())
                 
-                # Send heartbeat periodically, via gossip
+                for machine in data:
+                    # New machine, update current membership list
+                    if (machine not in self.member_list):
+                        self.member_list[machine] = {
+                            "heartbeat_counter" : data[machine]["heartbeat_counter"],
+                            "timestamp" : local_time
+                        }
+                    else:
+                        received_heartbeat_count = data[machine]["heartbeat_counter"]
+                        current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
+                        # Newer heartbeat, update entry
+                        if (received_heartbeat_count > current_heartbeat_count):
+                            self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
+                            self.member_list[machine]["timestamp"] = local_time
+
+                # Send heartbeat periodically, via gossip with membersehip list
                 if (local_time % self.HEARBEAT_INTERVAL == 0):
-                    pass
-                # Join request from a machine, gossip new membership list
-                if ("join" in data):
-                    pass
+                    self.gossip(self.member_list)
+
                 print("Received data:", data)
 
             except Exception as e:
@@ -75,6 +90,7 @@ class Node:
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
         target_machines = self.member_list.keys
+        target_machines = [int(id.split(":")[1]) for id in target_machines]
         target_machines.remove(self.current_machine_ix)
         num_gossip = (len(target_machines) // 2) + 1
         target_machines = random.sample(target_machines, num_gossip)
@@ -85,7 +101,9 @@ class Node:
     def join_group(self):
         self.update_id()
         join_dict = {
-            "join" : self.id
+            self.id : {
+                "heartbeat_counter" : 1
+            }
         }
         self.send(1,join_dict)
 
@@ -123,6 +141,8 @@ def process_input(node, command):
         split_ix = command.find("send ")
         node.send(2, command[split_ix + 5:])
         return ""
+    elif (command == "join"):
+        node.join_group()
     else:
         return "Command not recognized."
     
