@@ -140,7 +140,6 @@ class Node:
 
     # Leave group, gossip that you have left
     def leave_group(self):
-        self.version_number += 1
         # Stop sending heartbeats
         with self.is_active_lock:
             self.is_active = False
