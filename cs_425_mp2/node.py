@@ -20,7 +20,7 @@ class Node:
     ]
 
     # Set heartbeat interval to 2 seconds
-    HEARBEAT_INTERVAL = 2
+    HEARBEAT_INTERVAL = 10
     T_FAIL = 2
     T_CLEANUP = 2
 
