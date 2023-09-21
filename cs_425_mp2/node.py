@@ -28,6 +28,7 @@ class Node:
         self.version_number = -1
         self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
+        self.is_active = False
         self.member_list = dict()
         # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out later)
         self.last_gossip_timestamp = ""
@@ -77,12 +78,17 @@ class Node:
                         if (received_heartbeat_count > current_heartbeat_count):
                             self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                             self.member_list[machine]["timestamp"] = local_time
+                        else:
+                            time_diff = local_time - self.member_list[machine]["timestamp"]
+                            # Node has failed, remove from membership list entirely
+                            if (time_diff >= self.T_FAIL + self.T_CLEANUP):
+                                del self.member_list[machine]
 
             except Exception as e:
                 print("Error while listening:", e)
     
     def heartbeat(self):
-        while True:
+        while self.is_active:
             try:
                 local_time = int(time.time())
                 if (local_time % self.HEARBEAT_INTERVAL == 0):
@@ -109,6 +115,7 @@ class Node:
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
         self.update_id()
+        self.is_active = True
         join_dict = {
             self.id : {
                 "heartbeat_counter" : 1
@@ -118,10 +125,10 @@ class Node:
 
     # Leave group, gossip that you have left
     def leave_group(self):
-        # Remove current node from membership list and 
-        # gossip to other machines (so they update)
-        # Reset membership list
         self.version_number += 1
+        # Stop sending heartbeats
+        self.is_active = False
+        # Reset membership list
         self.member_list = {}
 
     # Sends a message via UDP to machine #<machine_ix>
@@ -152,6 +159,8 @@ def process_input(node, command):
         return ""
     elif (command == "join"):
         node.join_group()
+    elif (command == "leave"):
+        node.leave_group()
     else:
         return "Command not recognized."
     
