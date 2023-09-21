@@ -88,7 +88,7 @@ class Node:
                 print("Error while listening:", e)
     
     def heartbeat(self):
-        while self.is_active:
+        while True:
             try:
                 local_time = int(time.time())
                 if (local_time % self.HEARBEAT_INTERVAL == 0):
@@ -96,6 +96,8 @@ class Node:
                         self.member_list[self.id]["heartbeat_counter"] += 1
                         self.member_list[self.id]["timestamp"] = local_time
                     self.gossip(self.member_list)
+                    if not(self.active):
+                        self.member_list = {}
             except Exception as e:
                 print("Error while sending heartbeats:", e)
 
