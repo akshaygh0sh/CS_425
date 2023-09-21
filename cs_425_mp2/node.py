@@ -3,6 +3,7 @@ import socket
 import datetime
 import json
 import time
+import random
 
 class Node:
     MACHINE_LIST = [
@@ -22,26 +23,27 @@ class Node:
     HEARBEAT_INTERVAL = 2
 
     def __init__(self):
-        self.current_machine_ix = -1
-        self.ip = self.get_ip()
+        self.version_number = -1
+        self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
         self.member_list = dict()
-        # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out laters)
+        # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out later)
         self.last_gossip_timestamp = ""
         
-    def get_ip(self):
+    # Gets device info (ip and machine number)
+    def get_info(self):
         try:
             hostname = socket.gethostname()
-            self.current_machine_ix = hostname[13 : 15]
+            current_machine_ix = hostname[13 : 15]
             local_ip = socket.gethostbyname(hostname)
-            return local_ip 
+            return local_ip, int(current_machine_ix)
         except Exception as e:
             print("Error:", e)
     
     # Update the ID of the node (used for when attempting to join membership list)
-    def update_id(self): 
-        current_time = str(datetime.datetime.now())
-        self.id = self.ip + "@" + current_time
+    def update_id(self):
+        self.version_number += 1
+        return f"{self.ip}@{self.current_machine_ix}:{self.version_number}"
 
     def listen(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,13 +72,14 @@ class Node:
             except Exception as e:
                 print("Error:", e)
     
-    # Triggers a gossip round (sends to b random machines)
-    # in the listen function when we receive a stale gossip/potential repeat,
-    # don't regossip the message to other machines
-    def gossip(self, membership_list):
-        machine_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        machine_list.remove(self.current_machine_ix)
-        
+    # Triggers a gossip round (sends to N/2 random machines)
+    def gossip(self, message):
+        target_machines = self.member_list.keys
+        target_machines.remove(self.current_machine_ix)
+        num_gossip = (len(target_machines) // 2) + 1
+        target_machines = random.sample(target_machines, num_gossip)
+        for machine in target_machines:
+            self.send(machine, message)
     
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
@@ -91,6 +94,7 @@ class Node:
         # Remove current node from membership list and 
         # gossip to other machines (so they update)
         # Reset membership list
+        self.version_number += 1
         self.member_list = {}
 
     # Sends a message via UDP to machine #<machine_ix>
