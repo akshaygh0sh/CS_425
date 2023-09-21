@@ -60,13 +60,12 @@ class Node:
                 # Receive the command from the client
                 data, client_address = udp_socket.recvfrom(8096)
                 data = data.decode()
-                print("Received: ", data)
                 data = json.loads(data)
                 local_time = int(time.time())
                 
                 for machine in data:
                     # New machine, update current membership list
-                    if (machine not in self.member_list):
+                    if not (machine in self.member_list):
                         self.member_list[machine] = {
                             "heartbeat_counter" : data[machine]["heartbeat_counter"],
                             "timestamp" : local_time
@@ -86,8 +85,17 @@ class Node:
                 print("Received data:", data)
 
             except Exception as e:
-                print("Error:", e)
+                print("Error while listening:", e)
     
+    def heartbeat(self):
+        while True:
+            try:
+                local_time = int(time.time())
+                if (local_time % self.HEARBEAT_INTERVAL == 0):
+                    self.gossip(self.member_list)
+            except Exception as e:
+                print("Error while sending heartbeats:", e)
+
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
         target_machines = self.member_list.keys
@@ -157,11 +165,14 @@ def prompt_user(node):
 
 
 if __name__ == "__main__":
-    test = Node()
+    current_device = Node()
     # Create a thread for user input
-    listen_thread = threading.Thread(target=test.listen, args=())
+    listen_thread = threading.Thread(target=current_device.listen, args=())
     listen_thread.daemon = True  # Set the thread as a daemon so it doesn't block program exit
+    heartbeat_thread = threading.Thread(target=current_device.heartbeat, args=())
+    heartbeat_thread.daemon = True
     listen_thread.start()
+    heartbeat_thread.start()
 
-    prompt_user(test)
+    prompt_user(current_device)
 
