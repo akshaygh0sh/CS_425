@@ -30,6 +30,7 @@ class Node:
         self.id = self.update_id()
         self.is_active = False
         self.member_list = dict()
+        self.member_list_lock = threading.Lock()
         # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out later)
         self.last_gossip_timestamp = ""
         
@@ -62,22 +63,23 @@ class Node:
                 data, client_address = udp_socket.recvfrom(8096)
                 data = data.decode()
                 data = json.loads(data)
-                local_time = int(time.time())
-                
-                for machine in data:
-                    # New machine, update current membership list
-                    if not (machine in self.member_list):
-                        self.member_list[machine] = {
-                            "heartbeat_counter" : data[machine]["heartbeat_counter"],
-                            "timestamp" : local_time
-                        }
-                    else:
-                        received_heartbeat_count = data[machine]["heartbeat_counter"]
-                        current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
-                        # Newer heartbeat, update entry
-                        if (received_heartbeat_count > current_heartbeat_count):
-                            self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
-                            self.member_list[machine]["timestamp"] = local_time
+                with self.member_list_lock:
+                    for machine in data:
+                        # New machine, update current membership list
+                        if not (machine in self.member_list):
+                            local_time = int(time.time())
+                            self.member_list[machine] = {
+                                "heartbeat_counter" : data[machine]["heartbeat_counter"],
+                                "timestamp" : local_time
+                            }
+                        else:
+                            received_heartbeat_count = data[machine]["heartbeat_counter"]
+                            current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
+                            # Newer heartbeat, update entry
+                            if (received_heartbeat_count > current_heartbeat_count):
+                                local_time = int(time.time())
+                                self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
+                                self.member_list[machine]["timestamp"] = local_time
 
             except Exception as e:
                 print("Error while listening:", e)
@@ -91,15 +93,15 @@ class Node:
                     self.member_list[self.id]["timestamp"] = local_time
                 
                 # Prune membership list - delete failed nodes
-                for machine_id in list(self.member_list.keys()):
-                    if (machine_id in self.member_list):
+                with self.member_list_lock:
+                    for machine_id in self.member_list.keys():
                         time_diff = local_time - self.member_list[machine_id]["timestamp"]
                         print(f"Time diff for {machine_id}: {time_diff}")
                         # # Node has failed, remove from membership list entirely
                         if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                             del self.member_list[machine_id]
                         print(self.member_list)
-                self.gossip(self.member_list)
+                    self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
