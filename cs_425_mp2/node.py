@@ -71,6 +71,7 @@ class Node:
                             "heartbeat_counter" : data[machine]["heartbeat_counter"],
                             "timestamp" : local_time
                         }
+                    else:
                         received_heartbeat_count = data[machine]["heartbeat_counter"]
                         current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                         # Newer heartbeat, update entry
@@ -92,10 +93,11 @@ class Node:
                     
                     # Prune membership list - delete failed nodes
                     for machine_id in list(self.member_list.keys()):
-                        time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                        # Node has failed, remove from membership list entirely
-                        if (time_diff >= self.T_FAIL + self.T_CLEANUP):
-                            del self.member_list[machine_id]
+                        if (machine_id in self.member_list):
+                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                            # Node has failed, remove from membership list entirely
+                            if (time_diff >= self.T_FAIL + self.T_CLEANUP):
+                                del self.member_list[machine_id]
                     self.gossip(self.member_list)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
