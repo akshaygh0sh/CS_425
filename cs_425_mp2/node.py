@@ -85,7 +85,7 @@ class Node:
                 print("Error while listening:", e)
     
     def heartbeat(self):
-        while True:
+        while self.is_active:
             try:
                 local_time = int(time.time())
                 if (self.id in self.member_list):
