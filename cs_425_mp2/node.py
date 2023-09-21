@@ -29,6 +29,7 @@ class Node:
         self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
         self.is_active = False
+        self.is_active_lock = threading.Lock()
         self.member_list = dict()
         self.member_list_lock = threading.Lock()
         # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out later)
@@ -85,26 +86,28 @@ class Node:
                 print("Error while listening:", e)
     
     def heartbeat(self):
-        while self.is_active:
+        while True:
             try:
                 local_time = int(time.time())
-                if (self.id in self.member_list):
-                    self.member_list[self.id]["heartbeat_counter"] += 1
-                    self.member_list[self.id]["timestamp"] = local_time
-                
-                # Prune membership list - delete failed nodes
-                with self.member_list_lock:
-                    stale_entries = []
-                    for machine_id in self.member_list.keys():
-                        time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                        # # Node has failed, remove from membership list entirely
-                        if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                            stale_entries.append(machine_id)
-                    
-                    for entry in stale_entries:
-                        del self.member_list[entry]
-                    self.gossip(self.member_list)
-                time.sleep(self.HEARBEAT_INTERVAL)
+                with self.is_active_lock:
+                    if self.is_active:
+                        if (self.id in self.member_list):
+                            self.member_list[self.id]["heartbeat_counter"] += 1
+                            self.member_list[self.id]["timestamp"] = local_time
+                        
+                        # Prune membership list - delete failed nodes
+                        with self.member_list_lock:
+                            stale_entries = []
+                            for machine_id in self.member_list.keys():
+                                time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                                # # Node has failed, remove from membership list entirely
+                                if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                                    stale_entries.append(machine_id)
+                            
+                            for entry in stale_entries:
+                                del self.member_list[entry]
+                            self.gossip(self.member_list)
+                        time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
 
@@ -125,7 +128,8 @@ class Node:
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
         self.update_id()
-        self.is_active = True
+        with self.is_active_lock:
+            self.is_active = True
         join_dict = {
             self.id : {
                 "heartbeat_counter" : 1
@@ -137,7 +141,8 @@ class Node:
     def leave_group(self):
         self.version_number += 1
         # Stop sending heartbeats
-        self.is_active = False
+        with self.is_active_lock:
+            self.is_active = False
         # Reset membership list
         self.member_list = {}
 
