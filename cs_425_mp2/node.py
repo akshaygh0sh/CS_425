@@ -78,12 +78,6 @@ class Node:
                             self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                             self.member_list[machine]["timestamp"] = local_time
 
-                # Send heartbeat periodically, via gossip with membersehip list
-                if (local_time % self.HEARBEAT_INTERVAL == 0):
-                    self.gossip(self.member_list)
-
-                print("Received data:", data)
-
             except Exception as e:
                 print("Error while listening:", e)
     
@@ -106,7 +100,6 @@ class Node:
         num_gossip = (len(target_machines) // 2) + 1
         if (num_gossip <= len(target_machines)):
             target_machines = random.sample(target_machines, num_gossip)
-            print(target_machines)
             for machine_ix in target_machines:
                 self.send(machine_ix, message)
         
