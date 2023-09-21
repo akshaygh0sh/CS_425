@@ -91,6 +91,8 @@ class Node:
                         self.member_list[self.id]["heartbeat_counter"] += 1
                         self.member_list[self.id]["timestamp"] = local_time
                     
+                    print("Local time: ", local_time)
+                    print("Membership list:", self.member_list)
                     # Prune membership list - delete failed nodes
                     for machine_id in list(self.member_list.keys()):
                         if (machine_id in self.member_list):
