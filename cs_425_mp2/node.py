@@ -94,13 +94,15 @@ class Node:
                 
                 # Prune membership list - delete failed nodes
                 with self.member_list_lock:
+                    stale_entries = []
                     for machine_id in self.member_list.keys():
                         time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                        print(f"Time diff for {machine_id}: {time_diff}")
                         # # Node has failed, remove from membership list entirely
                         if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                            del self.member_list[machine_id]
-                        print(self.member_list)
+                            stale_entries.append(machine_id)
+                    
+                    for entry in stale_entries:
+                        del self.member_list[entry]
                     self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
