@@ -100,13 +100,16 @@ class Node:
     def gossip(self, message):
         target_machines = list(self.member_list.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines]
-        target_machines.remove(self.current_machine_ix)
+        # Remove current machine from gossip targets
+        if (self.current_machine_ix in target_machines):
+            target_machines.remove(self.current_machine_ix)
         num_gossip = (len(target_machines) // 2) + 1
-        target_machines = random.sample(target_machines, num_gossip)
-        print(target_machines)
-        for machine_ix in target_machines:
-            self.send(machine_ix, message)
-    
+        if (num_gossip <= len(target_machines)):
+            target_machines = random.sample(target_machines, num_gossip)
+            print(target_machines)
+            for machine_ix in target_machines:
+                self.send(machine_ix, message)
+        
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
         self.update_id()
