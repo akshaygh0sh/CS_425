@@ -96,8 +96,9 @@ class Node:
                         time_diff = local_time - self.member_list[machine_id]["timestamp"]
                         print(f"Time diff for {machine_id}: {time_diff}")
                         # # Node has failed, remove from membership list entirely
-                        # if (time_diff >= self.T_FAIL + self.T_CLEANUP):
-                        #     del self.member_list[machine_id]
+                        if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                            del self.member_list[machine_id]
+                        print(self.member_list)
                 self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
