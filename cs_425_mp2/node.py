@@ -89,6 +89,7 @@ class Node:
         while True:
             try:
                 local_time = int(time.time())
+                # Only send heartbeats if the node has "joined" the group
                 with self.is_active_lock:
                     if self.is_active:
                         if (self.id in self.member_list):
@@ -127,7 +128,7 @@ class Node:
         
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
-        self.update_id()
+        self.id = self.update_id()
         with self.is_active_lock:
             self.is_active = True
         join_dict = {
