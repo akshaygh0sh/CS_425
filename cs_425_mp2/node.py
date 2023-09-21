@@ -86,21 +86,21 @@ class Node:
         while True:
             try:
                 local_time = int(time.time())
-                if (local_time % self.HEARBEAT_INTERVAL == 0):
-                    if (self.id in self.member_list):
-                        self.member_list[self.id]["heartbeat_counter"] += 1
-                        self.member_list[self.id]["timestamp"] = local_time
-                    
-                    print("Local time: ", local_time)
-                    print("Membership list:", self.member_list)
-                    # Prune membership list - delete failed nodes
-                    for machine_id in list(self.member_list.keys()):
-                        if (machine_id in self.member_list):
-                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                            # Node has failed, remove from membership list entirely
-                            if (time_diff >= self.T_FAIL + self.T_CLEANUP):
-                                del self.member_list[machine_id]
-                    self.gossip(self.member_list)
+                if (self.id in self.member_list):
+                    self.member_list[self.id]["heartbeat_counter"] += 1
+                    self.member_list[self.id]["timestamp"] = local_time
+                
+                print("Local time: ", local_time)
+                print("Membership list:", self.member_list)
+                # Prune membership list - delete failed nodes
+                for machine_id in list(self.member_list.keys()):
+                    if (machine_id in self.member_list):
+                        time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                        # Node has failed, remove from membership list entirely
+                        if (time_diff >= self.T_FAIL + self.T_CLEANUP):
+                            del self.member_list[machine_id]
+                self.gossip(self.member_list)
+                time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
 
