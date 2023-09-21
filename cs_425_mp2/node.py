@@ -110,7 +110,7 @@ class Node:
 
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
-        target_machines = list(self.member_list.keys())
+        target_machines = list(self.member_list.keys()) if self.is_active else list(self.message.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines]
         # Remove current machine from gossip targets
         if (self.current_machine_ix in target_machines):
@@ -118,7 +118,7 @@ class Node:
         num_gossip = (len(target_machines) // 2) + 1
         if (num_gossip <= len(target_machines)):
             target_machines = random.sample(target_machines, num_gossip)
-            print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
+            # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
             for machine_ix in target_machines:
                 self.send(machine_ix, message)
         
