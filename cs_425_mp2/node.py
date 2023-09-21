@@ -96,7 +96,7 @@ class Node:
                         self.member_list[self.id]["heartbeat_counter"] += 1
                         self.member_list[self.id]["timestamp"] = local_time
                     self.gossip(self.member_list)
-                    if not(self.active):
+                    if not(self.is_active):
                         self.member_list = {}
             except Exception as e:
                 print("Error while sending heartbeats:", e)
