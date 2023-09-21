@@ -98,13 +98,14 @@ class Node:
 
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
-        target_machines = self.member_list.keys
+        target_machines = list(self.member_list.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines]
         target_machines.remove(self.current_machine_ix)
         num_gossip = (len(target_machines) // 2) + 1
         target_machines = random.sample(target_machines, num_gossip)
-        for machine in target_machines:
-            self.send(machine, message)
+        print(target_machines)
+        for machine_ix in target_machines:
+            self.send(machine_ix, message)
     
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
