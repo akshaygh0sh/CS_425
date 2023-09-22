@@ -17,7 +17,7 @@ MACHINE_LIST = [
     "fa23-cs425-5609.cs.illinois.edu",
     "fa23-cs425-5610.cs.illinois.edu"
 ]
-def connect_ssh(hostname, username, password):
+def connect_ssh(hostname, username, password, access_token):
   # Connect to hostname
     print(username)
     client = paramiko.SSHClient()
@@ -42,7 +42,7 @@ def main():
     access_token = input("Enter your access_token: ")
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(MACHINE_LIST)) as executor:
 
-        results = [executor.submit(connect_ssh, h, username, password) for h in MACHINE_LIST]
+        results = [executor.submit(connect_ssh, h, username, password, access_token) for h in MACHINE_LIST]
     
 if __name__ == "__main__":
     main()
