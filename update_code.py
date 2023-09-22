@@ -35,25 +35,6 @@ def connect_ssh(hostname, username, password):
     print(f"Machine: {hostname}\n{stdout.read().decode()}")
     client.close()
     
-
-def git_clone(client, username, access_token):
-  # Clone repo on client
-    client.exec_command(f"git config --global user.email {username}@illinois.edu", get_pty=True)
-    client.exec_command(f"git config --global user.name {username}", get_pty=True)
-    client.exec_command("git config --global --unset https.proxy", get_pty=True)
-    client.exec_command("git config --global --unset http.proxy", get_pty=True)
-    git_clone_command = f"rm -rf CS_425 ; git clone https://{username}:{access_token}@gitlab.engr.illinois.edu/gdurand2/CS_425.git"
-    stdin, stdout, stderr, = client.exec_command(git_clone_command, get_pty=True)
-    for line in iter(stdout.readline, ""):
-        print(line, end="")
-    print('finished.')
-    #print(f"Machine: {hostname}\n{stdout.read().decode()}")
-    client.close()
-# Parallel execution
-
-
-    
-    
     
 def main():
     username = input("Enter your username: ")
