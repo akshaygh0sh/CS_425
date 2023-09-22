@@ -17,7 +17,7 @@ MACHINE_LIST = [
     "fa23-cs425-5609.cs.illinois.edu",
     "fa23-cs425-5610.cs.illinois.edu"
 ]
-def connect_ssh(hostname, username, password, access_token):
+def connect_ssh(hostname, username, password, access_token, boolean_value):
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
@@ -29,16 +29,23 @@ def connect_ssh(hostname, username, password, access_token):
             password=password,
         )
         # Delete folder and then clone
-        ssh_client.exec_command(f"git config --global user.email {username}@illinois.edu", get_pty=True)
-        ssh_client.exec_command(f"git config --global user.name {username}", get_pty=True)
-        ssh_client.exec_command("git config --global --unset https.proxy", get_pty=True)
-        ssh_client.exec_command("git config --global --unset http.proxy", get_pty=True)
-        git_clone_command = f"rm -rf CS_425 ; git clone https://{username}:{access_token}@gitlab.engr.illinois.edu/gdurand2/CS_425.git"
-        stdin, stdout, stderr, = ssh_client.exec_command(git_clone_command, get_pty=True)
-        for line in iter(stdout.readline, ""):
-            print(line, end="")
-        print('finished.')
-        print(f"Machine: {hostname}\n{stdout.read().decode()}")
+        if boolean_value:
+            stdin, stdout, stderr, = ssh_client.exec_command("cd CS_425; git pull", get_pty=True)
+            for line in iter(stdout.readline, ""):
+                print(line, end="")
+            print('finished Pull.')
+            print(f"Machine: {hostname}\n{stdout.read().decode()}")
+        else:
+            ssh_client.exec_command(f"git config --global user.email {username}@illinois.edu", get_pty=True)
+            ssh_client.exec_command(f"git config --global user.name {username}", get_pty=True)
+            ssh_client.exec_command("git config --global --unset https.proxy", get_pty=True)
+            ssh_client.exec_command("git config --global --unset http.proxy", get_pty=True)
+            git_clone_command = f"rm -rf CS_425 ; git clone https://{username}:{access_token}@gitlab.engr.illinois.edu/gdurand2/CS_425.git"
+            stdin, stdout, stderr, = ssh_client.exec_command(git_clone_command, get_pty=True)
+            for line in iter(stdout.readline, ""):
+                print(line, end="")
+            print('finished Clone.')
+            print(f"Machine: {hostname}\n{stdout.read().decode()}")
         ssh_client.close()
     except Exception as e:
         print(e)
@@ -50,9 +57,19 @@ def main():
     username = input("Enter your username: ")
     password = getpass.getpass("Enter your password: ")
     access_token = input("Enter your access_token: ")
+    is_pull = input("pull?").strip().lower()
+
+    boolean_value = True
+    if is_pull == 'true':
+        boolean_value = True
+    elif is_pull == 'false':
+        boolean_value = False
+    else:
+        print("Invalid input. Please enter 'True' or 'False'.")
+        exit()
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(MACHINE_LIST)) as executor:
 
-        results = [executor.submit(connect_ssh, h, username, password, access_token) for h in MACHINE_LIST]
+        results = [executor.submit(connect_ssh, h, username, password, access_token, boolean_value) for h in MACHINE_LIST]
         concurrent.futures.wait(results)
     
 if __name__ == "__main__":
