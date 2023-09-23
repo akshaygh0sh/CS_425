@@ -66,7 +66,7 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
-                    print(data)
+                    #print(data)
                     for machine in data:
                         # New machine, update current membership list
                         if not (machine in self.member_list):
@@ -74,7 +74,6 @@ class Node:
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
-                                "is_enabled" : self.get_suspicion()
                             }
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -113,6 +112,7 @@ class Node:
                         
                         for entry in stale_entries:
                             del self.member_list[entry]
+                        self.member_list[self.id]["suspicion"] = self.get_suspicion()
                         self.gossip(self.member_list)
                     time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
@@ -122,6 +122,7 @@ class Node:
     def gossip(self, message):
         target_machines = list(self.member_list.keys()) if self.is_active else list(message.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines]
+        print(target_machines)
         # Remove current machine from gossip targets
         if (self.current_machine_ix in target_machines):
             target_machines.remove(self.current_machine_ix)
