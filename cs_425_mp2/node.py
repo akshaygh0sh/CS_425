@@ -35,8 +35,6 @@ class Node:
         self.is_active_lock = threading.Lock()
         self.member_list = dict()
         self.member_list_lock = threading.Lock()
-        # Used to stop gossiping (if incoming gossip has a stale timestamp don't retransmit - figure this out later)
-        self.last_gossip_timestamp = ""
         
     # Gets device info (ip and machine number)
     def get_info(self):
@@ -114,8 +112,10 @@ class Node:
                             # # Node has failed, remove from membership list entirely
                             
                             if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                                print("Removing node:", machine_id)
                                 stale_entries.append(machine_id)
                             elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                                print("Suspecting node:", machine_id)
                                 self.member_list[machine_id]["suspect"] = True
                         
                         for entry in stale_entries:
@@ -125,7 +125,7 @@ class Node:
                     time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
-
+    
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
         target_machines = list(self.member_list.keys()) if self.is_active else list(message.keys())
