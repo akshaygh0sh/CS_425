@@ -64,7 +64,6 @@ class Node:
         while True:
             try:
                 # Receive the command from the client
-                
                 data, client_address = udp_socket.recvfrom(8096)
                 data = data.decode()
                 data = json.loads(data)
@@ -82,7 +81,6 @@ class Node:
                             }
                             self.set_suspicion(bool(data[machine]["suspicion"]))
                         else:
-                            
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
                             current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                             # Newer heartbeat, update entry
@@ -112,12 +110,11 @@ class Node:
                     with self.member_list_lock:
                         stale_entries = []
                         for machine_id in self.member_list.keys():
-                            time_diff =     local_time - self.member_list[machine_id]["timestamp"]
+                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
                             # # Node has failed, remove from membership list entirely
                             
                             if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                 stale_entries.append(machine_id)
-                                
                             elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
                                 self.member_list[machine_id]["suspect"] = True
                         
@@ -198,11 +195,14 @@ class Node:
     
     def get_membership_list(self):
         return list(self.member_list.keys()) if self.is_active else []
-    def set_suspicion(self, isenabled):
+    
+    def set_suspicion(self, is_enabled):
         with self.suspicion_lock:
-            self.suspicion_enabled = isenabled
+            self.suspicion_enabled = is_enabled
+
     def get_suspicion(self):
         return bool(self.suspicion_enabled)
+    
 def process_input(node, command):
     if (command == "list_mem"):
         return node.get_membership_list()
@@ -215,14 +215,18 @@ def process_input(node, command):
         return ""
     elif (command == "join"):
         node.join_group()
+        return ""
     elif (command == "leave"):
         node.leave_group()
+        return ""
     elif (command == "bandwidth"):
         print("hey")
-    elif (command == "enable"):
+    elif (command == "enable suspicion"):
         node.set_suspicion(True)
-    elif (command == "disable"):
+        return ""
+    elif (command == "disable suspicion"):
         node.set_suspicion(False)
+        return ""
     else:
         return "Command not recognized."
     
@@ -236,9 +240,6 @@ def prompt_user(node):
 
 
 if __name__ == "__main__":
-    
-    
-    
     current_device = Node()
     # Create a thread for user input
     listen_thread = threading.Thread(target=current_device.listen, args=())
