@@ -30,6 +30,8 @@ class Node:
         self.id = self.update_id()
         self.is_active = False
         self.suspicion_enabled = False
+        
+        self.suspicion_lock = threading.Lock()
         self.is_active_lock = threading.Lock()
         self.member_list = dict()
         self.member_list_lock = threading.Lock()
@@ -66,7 +68,7 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
-                    #print(data)
+                    print(data)
                     for machine in data:
                         # New machine, update current membership list
                         if not (machine in self.member_list):
