@@ -74,7 +74,7 @@ class Node:
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
-                                "is_enabled" : self.suspicion_enabled
+                                "is_enabled" : self.get_suspicion()
                             }
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -169,7 +169,8 @@ class Node:
         return list(self.member_list.keys()) if self.is_active else []
     def set_suspicion(self, isenabled):
         self.suspicion_enabled = isenabled
-
+    def get_suspicion(self):
+        return bool(self.suspicion_enabled)
 def process_input(node, command):
     if (command == "list_mem"):
         return node.get_membership_list()
