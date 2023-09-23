@@ -29,6 +29,7 @@ class Node:
         self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
         self.is_active = False
+        self.suspicion_enabled = False
         self.is_active_lock = threading.Lock()
         self.member_list = dict()
         self.member_list_lock = threading.Lock()
@@ -65,13 +66,15 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
+                    print(data)
                     for machine in data:
                         # New machine, update current membership list
                         if not (machine in self.member_list):
                             local_time = int(time.time())
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
-                                "timestamp" : local_time
+                                "timestamp" : local_time,
+                                "is_enabled" : self.suspicion_enabled
                             }
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -101,7 +104,11 @@ class Node:
                         for machine_id in self.member_list.keys():
                             time_diff = local_time - self.member_list[machine_id]["timestamp"]
                             # # Node has failed, remove from membership list entirely
-                            if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                            
+                            if (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                              print("whatup")  
+                            
+                            elif (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                 stale_entries.append(machine_id)
                         
                         for entry in stale_entries:
@@ -160,6 +167,8 @@ class Node:
     
     def get_membership_list(self):
         return list(self.member_list.keys()) if self.is_active else []
+    def set_suspicion(self, isenabled):
+        self.suspicion_enabled = isenabled
 
 def process_input(node, command):
     if (command == "list_mem"):
@@ -175,6 +184,12 @@ def process_input(node, command):
         node.join_group()
     elif (command == "leave"):
         node.leave_group()
+    elif (command == "bandwidth"):
+        print("hey")
+    elif (command == "enable"):
+        node.set_suspicion(True)
+    elif (command == "disable"):
+        node.set_suspicion(False)
     else:
         return "Command not recognized."
     
@@ -188,6 +203,9 @@ def prompt_user(node):
 
 
 if __name__ == "__main__":
+    
+    
+    
     current_device = Node()
     # Create a thread for user input
     listen_thread = threading.Thread(target=current_device.listen, args=())
