@@ -174,7 +174,8 @@ class Node:
     def get_membership_list(self):
         return list(self.member_list.keys()) if self.is_active else []
     def set_suspicion(self, isenabled):
-        self.suspicion_enabled = isenabled
+        with self.suspicion_lock:
+            self.suspicion_enabled = isenabled
     def get_suspicion(self):
         return bool(self.suspicion_enabled)
 def process_input(node, command):
