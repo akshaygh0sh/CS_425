@@ -115,13 +115,11 @@ class Node:
                             time_diff =     local_time - self.member_list[machine_id]["timestamp"]
                             # # Node has failed, remove from membership list entirely
                             
-                            if (self.suspicion_enabled and time_diff >= self.T_FAIL
-                                and time_diff < (self.T_FAIL + self.T_CLEANUP)):
-                                
-                                self.member_list[machine_id]["suspect"] = True
-    
-                            elif (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                            if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                 stale_entries.append(machine_id)
+                                
+                            elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                                self.member_list[machine_id]["suspect"] = True
                         
                         for entry in stale_entries:
                             del self.member_list[entry]
