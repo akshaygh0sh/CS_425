@@ -74,6 +74,7 @@ class Node:
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
+                                "suspicion" : data[machine]["suspicion"]
                             }
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -96,6 +97,7 @@ class Node:
                     if (self.id in self.member_list):
                         self.member_list[self.id]["heartbeat_counter"] += 1
                         self.member_list[self.id]["timestamp"] = local_time
+                        self.member_list[self.id]["suspicion"] = self.get_suspicion()
                     
                     # Prune membership list - delete failed nodes
                     with self.member_list_lock:
@@ -112,7 +114,7 @@ class Node:
                         
                         for entry in stale_entries:
                             del self.member_list[entry]
-                        self.member_list[self.id]["suspicion"] = self.get_suspicion()
+
                         self.gossip(self.member_list)
                     time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
@@ -140,7 +142,8 @@ class Node:
             self.is_active = True
         join_dict = {
             self.id : {
-                "heartbeat_counter" : 1
+                "heartbeat_counter" : 1,
+                "suspicion" : False
             }
         }
         self.send(1,join_dict)
