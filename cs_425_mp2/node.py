@@ -146,7 +146,6 @@ class Node:
             with open("out_going_bandwidth.txt", "a+") as file:
                 file.write(f"Bandwidth: {bandwidth_bytes_per_second} bytes/second\n")
 
-        
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
         self.id = self.update_id()
