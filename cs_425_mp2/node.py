@@ -71,7 +71,6 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
-                    print(data)
                     for machine in data:
                         # New machine, update current membership list
                         if not (machine in self.member_list):
@@ -105,7 +104,7 @@ class Node:
                 # Artificial message dropping, randomly send heartbeat
                 # with probability (1 - self.drop_rate) * 100%
                 random_num = random.randint(0, 100)
-                if (random_num < self.drop_rate):
+                if (random_num > self.drop_rate):
                     # Only send heartbeats if the node has "joined" the group
                     if self.is_active:
                         if (self.id in self.member_list):
@@ -120,10 +119,8 @@ class Node:
                                 time_diff = local_time - self.member_list[machine_id]["timestamp"]
                                 # Node has failed, remove from membership list entirely
                                 if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                                    print("Removing node:", machine_id)
                                     stale_entries.append(machine_id)
                                 elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
-                                    print("Suspecting node:", machine_id)
                                     self.member_list[machine_id]["suspect"] = True
                             
                             for entry in stale_entries:
@@ -138,7 +135,6 @@ class Node:
     def gossip(self, message):
         target_machines = list(self.member_list.keys()) if self.is_active else list(message.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines]
-        print(target_machines)
         # Remove current machine from gossip targets
         if (self.current_machine_ix in target_machines):
             target_machines.remove(self.current_machine_ix)
@@ -209,7 +205,7 @@ class Node:
 
     def set_drop_rate(self, drop_rate):
         with self.drop_rate_lock:
-            self.set_droprate = int(drop_rate)
+            self.drop_rate = int(drop_rate)
 
     def get_suspicion(self):
         return self.suspicion_enabled
@@ -232,6 +228,7 @@ def process_input(node, command):
         return ""
     elif (command.startswith("drop_rate")):
         node.set_drop_rate(command[len("drop_rate") :])
+        return ""
     elif (command == "bandwidth"):
         print("hey")
     elif (command == "enable suspicion"):
