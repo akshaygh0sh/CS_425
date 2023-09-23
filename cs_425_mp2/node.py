@@ -64,6 +64,7 @@ class Node:
         while True:
             try:
                 # Receive the command from the client
+                
                 data, client_address = udp_socket.recvfrom(8096)
                 data = data.decode()
                 data = json.loads(data)
@@ -76,7 +77,8 @@ class Node:
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
-                                "suspicion" : data[machine]["suspicion"]
+                                "suspicion" : data[machine]["suspicion"],
+                                "suspect" : data[machine]["suspect"]
                             }
                             self.set_suspicion(bool(data[machine]["suspicion"]))
                         else:
@@ -89,6 +91,7 @@ class Node:
                                 self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                                 self.member_list[machine]["timestamp"] = local_time
                                 self.member_list[machine]["suspicion"] = data[machine]["suspicion"]
+                                self.member_list[machine]["suspect"] = False
                                 self.set_suspicion(bool(data[machine]["suspicion"]))
 
             except Exception as e:
@@ -109,12 +112,14 @@ class Node:
                     with self.member_list_lock:
                         stale_entries = []
                         for machine_id in self.member_list.keys():
-                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                            time_diff =     local_time - self.member_list[machine_id]["timestamp"]
                             # # Node has failed, remove from membership list entirely
                             
-                            if (self.suspicion_enabled and time_diff >= self.T_FAIL):
-                              print("whatup")  
-                            
+                            if (self.suspicion_enabled and time_diff >= self.T_FAIL
+                                and time_diff < (self.T_FAIL + self.T_CLEANUP)):
+                                
+                                self.member_list[machine_id]["suspect"] = True
+    
                             elif (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                 stale_entries.append(machine_id)
                         
@@ -136,10 +141,16 @@ class Node:
             target_machines.remove(self.current_machine_ix)
         num_gossip = (len(target_machines) // 2) + 1
         if (num_gossip <= len(target_machines)):
+            bandwidth_bytes_per_second = float(0.0)
             target_machines = random.sample(target_machines, num_gossip)
             # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
             for machine_ix in target_machines:
-                self.send(machine_ix, message)
+                bandwidth_bytes_per_second += self.send(machine_ix, message)
+            bandwidth_bytes_per_second /= len(target_machines)
+            
+            with open("out_going_bandwidth.txt", "a+") as file:
+                file.write(f"Bandwidth: {bandwidth_bytes_per_second} bytes/second\n")
+
         
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
@@ -149,7 +160,8 @@ class Node:
         join_dict = {
             self.id : {
                 "heartbeat_counter" : 1,
-                "suspicion" : False
+                "suspicion" : False,
+                "suspect": False
             }
         }
         self.send(1,join_dict)
@@ -167,13 +179,24 @@ class Node:
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         machine = self.MACHINE_LIST[machine_ix - 1]
         remote_port = 49153
-    
+        bandwidth_bytes_per_second = float(0.0)
         try:
-            udp_socket.sendto(json.dumps(message).encode(), (machine, remote_port))
+            tosend = json.dumps(message).encode()
+            start_time = time.time()
+        
+            udp_socket.sendto(tosend, (machine, remote_port))
+            
+            end_time = time.time()
+
+            message_size_bytes = len(tosend)
+            time_taken = end_time - start_time
+            bandwidth_bytes_per_second = message_size_bytes / time_taken
+            
         except socket.error as e:
             print("Could not connect to: ", machine, ": ", e)
         finally:
             udp_socket.close()
+            return bandwidth_bytes_per_second
     
     def get_membership_list(self):
         return list(self.member_list.keys()) if self.is_active else []
