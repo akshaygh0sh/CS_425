@@ -86,6 +86,7 @@ class Node:
                                 local_time = int(time.time())
                                 self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                                 self.member_list[machine]["timestamp"] = local_time
+                                self.member_list[machine]["suspicion"] = data[machine]["suspicion"]
 
             except Exception as e:
                 print("Error while listening:", e)
