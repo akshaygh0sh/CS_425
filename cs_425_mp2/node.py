@@ -201,7 +201,7 @@ class Node:
             self.suspicion_enabled = is_enabled
 
     def get_suspicion(self):
-        return bool(self.suspicion_enabled)
+        return self.suspicion_enabled
     
 def process_input(node, command):
     if (command == "list_mem"):
