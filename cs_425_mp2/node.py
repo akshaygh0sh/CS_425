@@ -78,7 +78,9 @@ class Node:
                                 "timestamp" : local_time,
                                 "suspicion" : data[machine]["suspicion"]
                             }
+                            self.set_suspicion(bool(data[machine]["suspicion"]))
                         else:
+                            
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
                             current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                             # Newer heartbeat, update entry
@@ -87,6 +89,7 @@ class Node:
                                 self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                                 self.member_list[machine]["timestamp"] = local_time
                                 self.member_list[machine]["suspicion"] = data[machine]["suspicion"]
+                                self.set_suspicion(bool(data[machine]["suspicion"]))
 
             except Exception as e:
                 print("Error while listening:", e)
