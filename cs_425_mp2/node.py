@@ -28,13 +28,18 @@ class Node:
         self.version_number = -1
         self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
+
         self.is_active = False
-        self.suspicion_enabled = False
-        
-        self.suspicion_lock = threading.Lock()
         self.is_active_lock = threading.Lock()
+
+        self.suspicion_enabled = False
+        self.suspicion_lock = threading.Lock()
+    
         self.member_list = dict()
         self.member_list_lock = threading.Lock()
+
+        self.drop_rate = 0
+        self.drop_rate_lock = threading.Lock()
         
     # Gets device info (ip and machine number)
     def get_info(self):
@@ -97,32 +102,35 @@ class Node:
         while True:
             try:
                 local_time = int(time.time())
-                # Only send heartbeats if the node has "joined" the group
-                if self.is_active:
-                    if (self.id in self.member_list):
-                        self.member_list[self.id]["heartbeat_counter"] += 1
-                        self.member_list[self.id]["timestamp"] = local_time
-                        self.member_list[self.id]["suspicion"] = self.get_suspicion()
-                    
-                    # Prune membership list - delete failed nodes
-                    with self.member_list_lock:
-                        stale_entries = []
-                        for machine_id in self.member_list.keys():
-                            time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                            # # Node has failed, remove from membership list entirely
-                            
-                            if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                                print("Removing node:", machine_id)
-                                stale_entries.append(machine_id)
-                            elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
-                                print("Suspecting node:", machine_id)
-                                self.member_list[machine_id]["suspect"] = True
+                # Artificial message dropping, randomly send heartbeat
+                # with probability (1 - self.drop_rate) * 100%
+                random_num = random.randint(0, 100)
+                if (random_num < self.drop_rate):
+                    # Only send heartbeats if the node has "joined" the group
+                    if self.is_active:
+                        if (self.id in self.member_list):
+                            self.member_list[self.id]["heartbeat_counter"] += 1
+                            self.member_list[self.id]["timestamp"] = local_time
+                            self.member_list[self.id]["suspicion"] = self.get_suspicion()
                         
-                        for entry in stale_entries:
-                            del self.member_list[entry]
+                        # Prune membership list - delete failed nodes
+                        with self.member_list_lock:
+                            stale_entries = []
+                            for machine_id in self.member_list.keys():
+                                time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                                # Node has failed, remove from membership list entirely
+                                if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                                    print("Removing node:", machine_id)
+                                    stale_entries.append(machine_id)
+                                elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                                    print("Suspecting node:", machine_id)
+                                    self.member_list[machine_id]["suspect"] = True
+                            
+                            for entry in stale_entries:
+                                del self.member_list[entry]
 
-                        self.gossip(self.member_list)
-                    time.sleep(self.HEARBEAT_INTERVAL)
+                            self.gossip(self.member_list)
+                time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
                 print("Error while sending heartbeats:", e)
     
@@ -199,6 +207,10 @@ class Node:
         with self.suspicion_lock:
             self.suspicion_enabled = is_enabled
 
+    def set_drop_rate(self, drop_rate):
+        with self.drop_rate_lock:
+            self.set_droprate = int(drop_rate)
+
     def get_suspicion(self):
         return self.suspicion_enabled
     
@@ -218,6 +230,8 @@ def process_input(node, command):
     elif (command == "leave"):
         node.leave_group()
         return ""
+    elif (command.startswith("drop_rate")):
+        node.set_drop_rate(command[len("drop_rate") :])
     elif (command == "bandwidth"):
         print("hey")
     elif (command == "enable suspicion"):
