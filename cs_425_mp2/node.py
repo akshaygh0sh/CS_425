@@ -25,7 +25,6 @@ class Node:
     T_CLEANUP = 2
 
     def __init__(self):
-        self.version_number = -1
         self.ip, self.current_machine_ix,  = self.get_info()
         self.id = self.update_id()
 
@@ -53,8 +52,8 @@ class Node:
     
     # Update the ID of the node (used for when attempting to join membership list)
     def update_id(self):
-        self.version_number += 1
-        return f"{self.ip}@{self.version_number}:{self.current_machine_ix}"
+        current_timestamp = str(datetime.datetime.now())
+        return f"{self.ip}@{current_timestamp}:{self.current_machine_ix}"
 
     def listen(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
