@@ -1,7 +1,7 @@
 import threading
 import socket
 import datetime, time
-import random, logging, json, sys
+import random, logging, json, sys, traceback
 
 class Node:
     MACHINE_LIST = [
@@ -86,33 +86,34 @@ class Node:
                 data = json.loads(data)
                 with self.member_list_lock:
                     self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
-                    for machine in data:    
-                        # New machine, update current membership list
-                        if not (machine in self.member_list):
-                            local_time = int(time.time())
-                            self.member_list[machine] = {
-                                "heartbeat_counter" : data[machine]["heartbeat_counter"],
-                                "timestamp" : local_time,
-                                "suspect" : data[machine]["suspect"]
-                            }
-                            self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
-                        else:
-                            received_heartbeat_count = data[machine]["heartbeat_counter"]
-                            current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
-                            # Newer heartbeat, update entry
-                            if (received_heartbeat_count > current_heartbeat_count):
+                    for machine in data:   
+                        if (machine != "suspicion"): 
+                            # New machine, update current membership list
+                            if not (machine in self.member_list):
                                 local_time = int(time.time())
-                                self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
-                                self.member_list[machine]["timestamp"] = local_time
-                                self.member_list[machine]["suspect"] = False
-                                self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
-                        
-                        # Update suspicion if counter is newer
-                        if ("suspicion" in data and "suspicion" in self.member_list):
-                            received_suspicion_counter = data["suspicion"]["counter"]
-                            current_suspicion_counter = self.member_list["suspicion"]["counter"]
-                            if (received_suspicion_counter > current_suspicion_counter):
-                                self.member_list["suspicion"] = data["suspicion"]
+                                self.member_list[machine] = {
+                                    "heartbeat_counter" : data[machine]["heartbeat_counter"],
+                                    "timestamp" : local_time,
+                                    "suspect" : data[machine]["suspect"]
+                                }
+                                self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
+                            else:
+                                received_heartbeat_count = data[machine]["heartbeat_counter"]
+                                current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
+                                # Newer heartbeat, update entry
+                                if (received_heartbeat_count > current_heartbeat_count):
+                                    local_time = int(time.time())
+                                    self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
+                                    self.member_list[machine]["timestamp"] = local_time
+                                    self.member_list[machine]["suspect"] = False
+                                    self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
+                        else:
+                            # Update suspicion if counter is newer
+                            if ("suspicion" in data and "suspicion" in self.member_list):
+                                received_suspicion_counter = data["suspicion"]["counter"]
+                                current_suspicion_counter = self.member_list["suspicion"]["counter"]
+                                if (received_suspicion_counter > current_suspicion_counter):
+                                    self.member_list["suspicion"] = data["suspicion"]
 
             except Exception as e:
                 print("Error while listening:", e)
@@ -147,30 +148,32 @@ class Node:
                         with self.member_list_lock:
                             stale_entries = []
                             for machine_id in self.member_list.keys():
-                                time_diff = local_time - self.member_list[machine_id]["timestamp"]
-                                # Node has failed, remove from membership list entirely
-                                if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
-                                    stale_entries.append(machine_id)
-                                elif (self.member_list["suspicion"]["enabled"] and time_diff >= self.T_FAIL):
-                                    self.logger.warning(f"{machine_id} is suspected to have failed!")
-                                    self.member_list[machine_id]["suspect"] = True
-                                    print(f"\n{machine_id} is suspected to have failed!")
-                                    sys.stdout.flush()
-                            
-                            for entry in stale_entries:
-                                self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
-                                del self.member_list[entry]
+                                if (machine_id != "suspicion"):
+                                    time_diff = local_time - self.member_list[machine_id]["timestamp"]
+                                    # Node has failed, remove from membership list entirely
+                                    if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
+                                        stale_entries.append(machine_id)
+                                    elif (self.member_list["suspicion"]["enabled"] and time_diff >= self.T_FAIL):
+                                        self.logger.warning(f"{machine_id} is suspected to have failed!")
+                                        self.member_list[machine_id]["suspect"] = True
+                                        print(f"\n{machine_id} is suspected to have failed!")
+                                        sys.stdout.flush()
+                                
+                                    for entry in stale_entries:
+                                        self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
+                                        del self.member_list[entry]
 
                             self.logger.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
                             self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
+                traceback.print_exc()
                 print("Error while sending heartbeats:", e)
     
     # Triggers a gossip round (sends to N/2 random machines)
     def gossip(self, message):
         target_machines = list(self.member_list.keys()) if self.is_active else list(message.keys())
-        target_machines = [int(id.split(":")[1]) for id in target_machines]
+        target_machines = [int(id.split(":")[1]) for id in target_machines if id != "suspicion"]
         # Remove current machine from gossip targets
         if (self.current_machine_ix in target_machines):
             target_machines.remove(self.current_machine_ix)
