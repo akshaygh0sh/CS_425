@@ -103,10 +103,18 @@ class Node:
                                 # Newer heartbeat, update entry
                                 if (received_heartbeat_count > current_heartbeat_count):
                                     local_time = int(time.time())
-                                    self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
+                                    if (machine == self.id and data[self.id]["suspect"]):
+                                        # Other node is saying that we have been suspected of failure
+                                        # need to reincarnate and gossip
+                                        self.update_id()
+                                        self.member_list[self.id]["heartbeat_counter"] = 1
+                                    else:
+                                        self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count        
+                                        
                                     self.member_list[machine]["timestamp"] = local_time
                                     self.member_list[machine]["suspect"] = False
                                     self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
+                            
                         else:
                             # Update suspicion if counter is newer
                             if ("suspicion" in data and "suspicion" in self.member_list):
