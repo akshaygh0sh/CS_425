@@ -98,6 +98,7 @@ class Node:
                                 "suspicion" : suspicion_val,
                                 "suspect" : data[machine]["suspect"]
                             }
+                            self.set_suspicion(suspicion_val)
                             self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -180,6 +181,7 @@ class Node:
         join_dict = {
             self.id : {
                 "heartbeat_counter" : 1,
+                "suspicion" : False,
                 "suspect": False
             }
         }
