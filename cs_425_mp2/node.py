@@ -102,7 +102,7 @@ class Node:
                                 current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                                 local_time = int(time.time())
                                 if (self.is_active and machine == self.id and data[self.id]["suspect"]):
-                                    logging.info(f"\nCurrently suspected to have failed. Rejoining group with new incarnation ID")
+                                    print(f"\nCurrently suspected to have failed. Rejoining group with new incarnation ID")
                                     sys.stdout.flush()
                                     # Other node is saying that we have been suspected of failure
                                     # need to reincarnate and gossip
@@ -126,7 +126,7 @@ class Node:
                                 if (received_suspicion_counter > current_suspicion_counter):
                                     self.member_list["suspicion"] = data["suspicion"]
                                     self.set_suspicion(self.member_list["suspicion"]["enabled"])
-                                    logging.info(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
+                                    print(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
                                     sys.stdout.flush()
             except Exception as e:
                 print("Error while listening:", e)  
@@ -169,7 +169,7 @@ class Node:
                                     elif (self.member_list["suspicion"]["enabled"] and time_diff >= self.T_FAIL):
                                         self.logger.warning(f"{machine_id} is suspected to have failed!")
                                         self.member_list[machine_id]["suspect"] = True
-                                        logging.warning(f"\n{machine_id} is suspected to have failed!")
+                                        print(f"\n{machine_id} is suspected to have failed!")
                                         sys.stdout.flush()
                                 
                             for entry in stale_entries:
