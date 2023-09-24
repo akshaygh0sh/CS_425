@@ -102,16 +102,10 @@ class Node:
                                 current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                                 local_time = int(time.time())
                                 if (machine == self.id and data[self.id]["suspect"]):
-                                    print(f"\nCurrently suspected to have failed. Transmitted message that we are still alive")
+                                    print(f"\nCurrently suspected to have failed. Rejoining group with new incarnation ID")
                                     # Other node is saying that we have been suspected of failure
                                     # need to reincarnate and gossip
-                                    del self.member_list[self.id]
-                                    self.update_id()
-                                    self.member_list[self.id] = {
-                                        "heartbeat_counter" : 1,
-                                        "timestamp" : local_time,
-                                        "suspect" : False,
-                                    }
+                                    self.join_group()
                                     self.logger.info(f"Suspected node ({self.id}) is actually alive. Updated entry: {self.member_list[machine]}")
                                 # Newer heartbeat, update entry
                                 elif (received_heartbeat_count > current_heartbeat_count):
