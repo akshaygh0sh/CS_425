@@ -229,6 +229,7 @@ class Node:
                 print("\nSuspicion:", "enabled" if is_enabled else "disabled")
                 sys.stdout.flush()
             self.suspicion_enabled = is_enabled
+            self.logger.info(f"Suspicion set to: {self.suspicion_enabled}")
 
     def set_drop_rate(self, drop_rate):
         with self.drop_rate_lock:
