@@ -85,7 +85,7 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
-                    logging.info(f"Machine {self.id} received heartbeat data: {data}")
+                    self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
                     for machine in data:    
                         # New machine, update current membership list
                         if not (machine in self.member_list):
@@ -97,7 +97,7 @@ class Node:
                                 "suspect" : data[machine]["suspect"]
                             }
                             self.set_suspicion(bool(data[machine]["suspicion"]))
-                            logging.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
+                            self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
                             current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
@@ -109,7 +109,7 @@ class Node:
                                 self.member_list[machine]["suspicion"] = data[machine]["suspicion"]
                                 self.member_list[machine]["suspect"] = False
                                 self.set_suspicion(bool(data[machine]["suspicion"]))
-                                logging.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
+                                self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
             except Exception as e:
                 print("Error while listening:", e)
     
@@ -137,15 +137,15 @@ class Node:
                                 if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                     stale_entries.append(machine_id)
                                 elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
-                                    logging.warning(f"{machine_id} is suspected to have failed!")
+                                    self.logger.warning(f"{machine_id} is suspected to have failed!")
                                     self.member_list[machine_id]["suspect"] = True
                                     print(f"{machine_id} is suspected to have failed!")
                             
                             for entry in stale_entries:
-                                logging.warning(f"Heartbeat timeout, removing {entry} from membership list")
+                                self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
                                 del self.member_list[entry]
 
-                            logging.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
+                            self.logger.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
                             self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
@@ -183,7 +183,7 @@ class Node:
             }
         }
         self.send(1,join_dict)
-        logging.info(f"{self.id} is joining group")
+        self.logger.info(f"{self.id} is joining group")
 
     # Leave group, gossip that you have left
     def leave_group(self):
@@ -192,7 +192,7 @@ class Node:
             self.is_active = False
         # Reset membership list
         self.member_list = {}
-        logging.info(f"{self.id} is leaving group")
+        self.logger.info(f"{self.id} is leaving group")
 
     # Sends a message via UDP to machine #<machine_ix>
     def send(self, machine_ix, message):
