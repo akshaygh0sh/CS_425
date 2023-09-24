@@ -174,7 +174,6 @@ class Node:
                                 
                             for entry in stale_entries:
                                 self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
-                                print(f"\nHeartbeat timeout, removing {entry} from membership list")
                                 sys.stdout.flush()
                                 del self.member_list[entry]
 
