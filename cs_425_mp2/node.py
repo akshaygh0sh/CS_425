@@ -26,7 +26,7 @@ class Node:
         self.ip, self.current_machine_ix,  = self.get_info()
         self.LOG_FILE = f"MP2_machine_{self.current_machine_ix}.log"
         self.logger = logging.getLogger("MP2_Logger")
-        self.logger.setLevel(logging.debug)
+        self.logger.setLevel(logging.DEBUG)
         # Create a file handler and set the log level
         file_handler = logging.FileHandler(self.LOG_FILE)
         file_handler.setLevel(logging.DEBUG)
