@@ -108,10 +108,11 @@ class Node:
                                 self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
                         
                         # Update suspicion if counter is newer
-                        received_suspicion_counter = data["suspicion"]["counter"] if "suspicion" in data else 0
-                        current_suspicion_counter = self.member_list["suspicion"]["counter"]
-                        if (received_suspicion_counter > current_suspicion_counter):
-                            self.member_list["suspicion"] = data["suspicion"]
+                        if ("suspicion" in data and "suspicion" in self.member_list):
+                            received_suspicion_counter = data["suspicion"]["counter"]
+                            current_suspicion_counter = self.member_list["suspicion"]["counter"]
+                            if (received_suspicion_counter > current_suspicion_counter):
+                                self.member_list["suspicion"] = data["suspicion"]
 
             except Exception as e:
                 print("Error while listening:", e)
