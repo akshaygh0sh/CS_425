@@ -88,17 +88,13 @@ class Node:
                     self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
                     for machine in data:    
                         # New machine, update current membership list
-                        # If suspicion key doesn't exist, new node, set to whatever current suspicion value is
-                        suspicion_val = bool(data[machine]["suspicion"]) if "suspicion" in data[machine] else self.suspicion_enabled
                         if not (machine in self.member_list):
                             local_time = int(time.time())
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
-                                "suspicion" : suspicion_val,
                                 "suspect" : data[machine]["suspect"]
                             }
-                            self.set_suspicion(suspicion_val)
                             self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
@@ -108,10 +104,15 @@ class Node:
                                 local_time = int(time.time())
                                 self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count
                                 self.member_list[machine]["timestamp"] = local_time
-                                self.member_list[machine]["suspicion"] = suspicion_val
                                 self.member_list[machine]["suspect"] = False
-                                self.set_suspicion(suspicion_val)
                                 self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
+                        
+                        # Update suspicion if counter is newer
+                        received_suspicion_counter = data["suspicion"]["counter"] if "suspicion" in data else 0
+                        current_suspicion_counter = self.member_list["suspicion"]["counter"]
+                        if (received_suspicion_counter > current_suspicion_counter):
+                            self.member_list["suspicion"] = data["suspicion"]
+
             except Exception as e:
                 print("Error while listening:", e)
     
@@ -125,10 +126,21 @@ class Node:
                 if (random_num > self.drop_rate):
                     # Only send heartbeats if the node has "joined" the group
                     if self.is_active:
+                        if not ("suspicion" in self.member_list):
+                            self.member_list["suspicion"] = {
+                                "counter" : 1,
+                                "enabled" : self.suspicion_enabled
+                            }
+                        else:
+                            if (self.get_suspicion() != self.member_list["suspicion"]["enabled"]):
+                                self.member_list["suspicion"] = {
+                                    "counter" : self.member_list["suspicion"]["counter"] + 1,
+                                    "enabled" : self.get_suspicion()
+                                }
+                        
                         if (self.id in self.member_list):
                             self.member_list[self.id]["heartbeat_counter"] += 1
                             self.member_list[self.id]["timestamp"] = local_time
-                            self.member_list[self.id]["suspicion"] = self.get_suspicion()
                         
                         # Prune membership list - delete failed nodes
                         with self.member_list_lock:
@@ -138,7 +150,7 @@ class Node:
                                 # Node has failed, remove from membership list entirely
                                 if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                     stale_entries.append(machine_id)
-                                elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                                elif (self.member_list["suspicion"]["enabled"] and time_diff >= self.T_FAIL):
                                     self.logger.warning(f"{machine_id} is suspected to have failed!")
                                     self.member_list[machine_id]["suspect"] = True
                                     print(f"\n{machine_id} is suspected to have failed!")
@@ -181,7 +193,6 @@ class Node:
         join_dict = {
             self.id : {
                 "heartbeat_counter" : 1,
-                "suspicion" : False,
                 "suspect": False
             }
         }
@@ -226,11 +237,7 @@ class Node:
     
     def set_suspicion(self, is_enabled):
         with self.suspicion_lock:
-            if (is_enabled != self.suspicion_enabled):
-                print("\nSuspicion:", "enabled" if is_enabled else "disabled")
-                sys.stdout.flush()
             self.suspicion_enabled = is_enabled
-            self.logger.info(f"Suspicion set to: {self.suspicion_enabled}")
 
     def set_drop_rate(self, drop_rate):
         with self.drop_rate_lock:
