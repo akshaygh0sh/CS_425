@@ -88,7 +88,8 @@ class Node:
                     self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
                     for machine in data:   
                         if (machine != "suspicion"):
-                            print(data) 
+                            print("Membership list:", self.member_list)
+                            print("Data keys:", data.keys()) 
                             # New machine, update current membership list
                             if not (machine in self.member_list):
                                 local_time = int(time.time())
