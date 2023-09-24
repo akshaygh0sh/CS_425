@@ -103,6 +103,7 @@ class Node:
                                 local_time = int(time.time())
                                 if (self.is_active and machine == self.id and data[self.id]["suspect"]):
                                     print(f"\nCurrently suspected to have failed. Rejoining group with new incarnation ID")
+                                    sys.stdout.flush()
                                     # Other node is saying that we have been suspected of failure
                                     # need to reincarnate and gossip
                                     self.join_group()
