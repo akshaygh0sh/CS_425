@@ -114,6 +114,7 @@ class Node:
                                 current_suspicion_counter = self.member_list["suspicion"]["counter"]
                                 if (received_suspicion_counter > current_suspicion_counter):
                                     self.member_list["suspicion"] = data["suspicion"]
+                                    self.set_suspicion(self.member_list["suspicion"]["enabled"])
 
             except Exception as e:
                 print("Error while listening:", e)
