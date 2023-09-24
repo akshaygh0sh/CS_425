@@ -98,6 +98,8 @@ class Node:
                                 "suspicion" : suspicion_val,
                                 "suspect" : data[machine]["suspect"]
                             }
+                            if (machine == self.id):
+                                self.set_suspicion(suspicion_val)
                             self.logger.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
