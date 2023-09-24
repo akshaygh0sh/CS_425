@@ -270,7 +270,9 @@ def prompt_user(node):
         if user_input.lower() == 'exit':
             break
         else:
-            print(process_input(node, user_input))
+            output = process_input(node, user_input)
+            if (output):
+                print(process_input(node, user_input))
 
 
 if __name__ == "__main__":
