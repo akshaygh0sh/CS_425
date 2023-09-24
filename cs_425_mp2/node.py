@@ -1,7 +1,7 @@
 import threading
 import socket
 import datetime, time
-import random, logging, json
+import random, logging, json, sys
 
 class Node:
     MACHINE_LIST = [
@@ -142,6 +142,7 @@ class Node:
                                     self.logger.warning(f"{machine_id} is suspected to have failed!")
                                     self.member_list[machine_id]["suspect"] = True
                                     print(f"\n{machine_id} is suspected to have failed!")
+                                    sys.stdout.flush()
                             
                             for entry in stale_entries:
                                 self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
@@ -225,7 +226,8 @@ class Node:
     def set_suspicion(self, is_enabled):
         with self.suspicion_lock:
             if (is_enabled != self.suspicion_enabled):
-                print("Suspicion:", "enabled" if is_enabled else "disabled")
+                print("\nSuspicion:", "enabled" if is_enabled else "disabled")
+                sys.stdout.flush()
             self.suspicion_enabled = is_enabled
 
     def set_drop_rate(self, drop_rate):
