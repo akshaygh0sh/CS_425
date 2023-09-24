@@ -139,7 +139,7 @@ class Node:
                                 elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
                                     self.logger.warning(f"{machine_id} is suspected to have failed!")
                                     self.member_list[machine_id]["suspect"] = True
-                                    print(f"{machine_id} is suspected to have failed!")
+                                    print(f"\n{machine_id} is suspected to have failed!")
                             
                             for entry in stale_entries:
                                 self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
