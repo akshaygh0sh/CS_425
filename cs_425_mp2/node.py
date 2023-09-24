@@ -1,9 +1,7 @@
 import threading
 import socket
-import datetime
-import json
-import time
-import random
+import datetime, time
+import random, logging, json
 
 class Node:
     MACHINE_LIST = [
@@ -26,6 +24,22 @@ class Node:
 
     def __init__(self):
         self.ip, self.current_machine_ix,  = self.get_info()
+        self.LOG_FILE = f"MP2_machine_{self.current_machine_ix}.log"
+        self.logger = logging.getLogger("MP2_Logger")
+        self.logger.setLevel(logging.debug)
+        # Create a file handler and set the log level
+        file_handler = logging.FileHandler(self.LOG_FILE)
+        file_handler.setLevel(logging.DEBUG)
+
+        # Create a formatter to include timestamps
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+        # Set the formatter for the file handler
+        file_handler.setFormatter(formatter)
+
+        # Add the file handler to the logger
+        self.logger.addHandler(file_handler)
+
         self.id = self.update_id()
 
         self.is_active = False
@@ -52,8 +66,9 @@ class Node:
     
     # Update the ID of the node (used for when attempting to join membership list)
     def update_id(self):
-        current_timestamp = str(datetime.datetime.now())
-        return f"{self.ip}@{current_timestamp}:{self.current_machine_ix}"
+        current_timestamp = datetime.datetime.now()
+        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H%M%S")
+        return f"{self.ip}@{formatted_timestamp}:{self.current_machine_ix}"
 
     def listen(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,7 +85,8 @@ class Node:
                 data = data.decode()
                 data = json.loads(data)
                 with self.member_list_lock:
-                    for machine in data:
+                    logging.info(f"Machine {self.id} received heartbeat data: {data}")
+                    for machine in data:    
                         # New machine, update current membership list
                         if not (machine in self.member_list):
                             local_time = int(time.time())
@@ -81,6 +97,7 @@ class Node:
                                 "suspect" : data[machine]["suspect"]
                             }
                             self.set_suspicion(bool(data[machine]["suspicion"]))
+                            logging.info(f"New machine {machine} found in heartbeat data. Creating entry: {self.member_list[machine]}")
                         else:
                             received_heartbeat_count = data[machine]["heartbeat_counter"]
                             current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
@@ -92,7 +109,7 @@ class Node:
                                 self.member_list[machine]["suspicion"] = data[machine]["suspicion"]
                                 self.member_list[machine]["suspect"] = False
                                 self.set_suspicion(bool(data[machine]["suspicion"]))
-
+                                logging.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
             except Exception as e:
                 print("Error while listening:", e)
     
@@ -120,12 +137,15 @@ class Node:
                                 if (time_diff >= (self.T_FAIL + self.T_CLEANUP)):
                                     stale_entries.append(machine_id)
                                 elif (self.suspicion_enabled and time_diff >= self.T_FAIL):
+                                    logging.warning(f"{machine_id} is suspected to have failed!")
                                     self.member_list[machine_id]["suspect"] = True
-                                    print("We suspect ", machine_id, " is suspected to have failed")
+                                    print(f"{machine_id} is suspected to have failed!")
                             
                             for entry in stale_entries:
+                                logging.warning(f"Heartbeat timeout, removing {entry} from membership list")
                                 del self.member_list[entry]
 
+                            logging.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
                             self.gossip(self.member_list)
                 time.sleep(self.HEARBEAT_INTERVAL)
             except Exception as e:
@@ -179,14 +199,14 @@ class Node:
         remote_port = 49153
         bandwidth_bytes_per_second = float(0.0)
         try:
-            tosend = json.dumps(message).encode()
+            to_send = json.dumps(message).encode()
             start_time = time.time()
         
-            udp_socket.sendto(tosend, (machine, remote_port))
+            udp_socket.sendto(to_send, (machine, remote_port))
             
             end_time = time.time()
 
-            message_size_bytes = len(tosend)
+            message_size_bytes = len(to_send)
             time_taken = end_time - start_time
             bandwidth_bytes_per_second = message_size_bytes / time_taken
             
