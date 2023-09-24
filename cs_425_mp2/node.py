@@ -90,7 +90,6 @@ class Node:
                         # New machine, update current membership list
                         # If suspicion key doesn't exist, new node, set to whatever current suspicion value is
                         suspicion_val = bool(data[machine]["suspicion"]) if "suspicion" in data[machine] else self.suspicion_enabled
-                        self.set_suspicion(suspicion_val)
                         if not (machine in self.member_list):
                             local_time = int(time.time())
                             self.member_list[machine] = {
@@ -110,6 +109,7 @@ class Node:
                                 self.member_list[machine]["timestamp"] = local_time
                                 self.member_list[machine]["suspicion"] = suspicion_val
                                 self.member_list[machine]["suspect"] = False
+                                self.set_suspicion(suspicion_val)
                                 self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
             except Exception as e:
                 print("Error while listening:", e)
