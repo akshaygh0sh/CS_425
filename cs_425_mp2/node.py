@@ -102,22 +102,21 @@ class Node:
                             else:
                                 received_heartbeat_count = data[machine]["heartbeat_counter"]
                                 current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
+                                local_time = int(time.time())
+                                if (machine == self.id and data[self.id]["suspect"]):
+                                    print("I'm suspected...")
+                                    # Other node is saying that we have been suspected of failure
+                                    # need to reincarnate and gossip
+                                    self.update_id()
+                                    self.member_list[self.id] = {
+                                        "heartbeat_counter" : 1,
+                                        "timestamp" : local_time,
+                                        "suspect" : False,
+                                    }
+                                    self.logger.info(f"Suspected node ({self.id}) is actually alive. Updated entry: {self.member_list[machine]}")
                                 # Newer heartbeat, update entry
-                                if (received_heartbeat_count > current_heartbeat_count):
-                                    local_time = int(time.time())
-
-                                    print("Current machine:", machine)
-                                    print("ID:", self.id)
-                                    print("Suspected?", data[self.id]["suspect"])
-                                    if (machine == self.id and data[self.id]["suspect"]):
-                                        print("I'm suspected...")
-                                        # Other node is saying that we have been suspected of failure
-                                        # need to reincarnate and gossip
-                                        self.update_id()
-                                        self.member_list[self.id]["heartbeat_counter"] = 1
-                                    else:
-                                        self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count        
-                                        
+                                elif (received_heartbeat_count > current_heartbeat_count):
+                                    self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count        
                                     self.member_list[machine]["timestamp"] = local_time
                                     self.member_list[machine]["suspect"] = False
                                     self.logger.info(f"Newer heartbeat for {machine} detected. Updated entry: {self.member_list[machine]}")
@@ -133,7 +132,7 @@ class Node:
                                     print(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
                                     sys.stdout.flush()
             except Exception as e:
-                print("Error while listening:", e)
+                print("Error while listening:", e) 
     
     def heartbeat(self):
         while True:
