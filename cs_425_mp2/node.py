@@ -161,9 +161,9 @@ class Node:
                                         print(f"\n{machine_id} is suspected to have failed!")
                                         sys.stdout.flush()
                                 
-                                    for entry in stale_entries:
-                                        self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
-                                        del self.member_list[entry]
+                            for entry in stale_entries:
+                                self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
+                                del self.member_list[entry]
 
                             self.logger.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
                             self.gossip(self.member_list)
