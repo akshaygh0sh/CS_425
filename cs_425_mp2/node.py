@@ -104,6 +104,10 @@ class Node:
                                 # Newer heartbeat, update entry
                                 if (received_heartbeat_count > current_heartbeat_count):
                                     local_time = int(time.time())
+
+                                    print("Current machine:", machine)
+                                    print("ID:", self.id)
+                                    print("Suspected?", data[self.id]["suspect"])
                                     if (machine == self.id and data[self.id]["suspect"]):
                                         print("I'm suspected...")
                                         # Other node is saying that we have been suspected of failure
@@ -127,7 +131,6 @@ class Node:
                                     self.set_suspicion(self.member_list["suspicion"]["enabled"])
                                     print(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
                                     sys.stdout.flush()
-
             except Exception as e:
                 print("Error while listening:", e)
     
