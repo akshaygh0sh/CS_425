@@ -168,9 +168,9 @@ class Node:
                                         stale_entries.append(machine_id)
                                     elif (self.member_list["suspicion"]["enabled"] and time_diff >= self.T_FAIL):
                                         current_time = datetime.datetime.now()
-                                        self.logger.warning(f"{current_time}: {machine_id} is suspected to have failed!")
+                                        self.logger.warning(f"{machine_id} is suspected to have failed!")
                                         self.member_list[machine_id]["suspect"] = True
-                                        print(f"\n{machine_id} is suspected to have failed!")
+                                        print(f"\n{current_time}: {machine_id} is suspected to have failed!")
                                         sys.stdout.flush()
                                 
                             for entry in stale_entries:
