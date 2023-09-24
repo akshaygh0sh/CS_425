@@ -63,7 +63,7 @@ def launch_cluster(to_connect):
             )
            
             
-            ssh_client.exec_command("cd CS_425/cs425_mp1 ; python3 ./receiver/receiver.py &")
+            ssh_client.exec_command("cd CS_425/cs_425_mp1 ; python3 ./receiver/receiver.py &")
             print(f"Launched TCP receiver on {hostname}")
             
             
