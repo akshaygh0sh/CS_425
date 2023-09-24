@@ -252,7 +252,8 @@ class Node:
             return bandwidth_bytes_per_second
     
     def get_membership_list(self):
-        return list(self.member_list.keys()) if self.is_active else []
+        real_values = [item for item in self.member_list.keys() if item != "suspicion"]
+        return real_values if self.is_active else []
     
     def set_suspicion(self, is_enabled):
         with self.suspicion_lock:
