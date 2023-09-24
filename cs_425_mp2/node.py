@@ -183,6 +183,7 @@ class Node:
             }
         }
         self.send(1,join_dict)
+        logging.info(f"{self.id} is joining group")
 
     # Leave group, gossip that you have left
     def leave_group(self):
@@ -191,6 +192,7 @@ class Node:
             self.is_active = False
         # Reset membership list
         self.member_list = {}
+        logging.info(f"{self.id} is leaving group")
 
     # Sends a message via UDP to machine #<machine_ix>
     def send(self, machine_ix, message):
