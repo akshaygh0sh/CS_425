@@ -224,7 +224,7 @@ class Node:
     def set_suspicion(self, is_enabled):
         with self.suspicion_lock:
             if (is_enabled != self.suspicion_enabled):
-                print("Suspicion: ", "enabled" if self.suspicion_enabled else "disabled")
+                print("\nSuspicion: ", "enabled" if self.suspicion_enabled else "disabled")
             self.suspicion_enabled = is_enabled
 
     def set_drop_rate(self, drop_rate):
