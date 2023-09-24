@@ -88,10 +88,10 @@ class Node:
                     self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
                     for machine in data:    
                         # New machine, update current membership list
+                        # If suspicion key doesn't exist, new node, set to whatever current suspicion value is
+                        suspicion_val = bool(data[machine]["suspicion"]) if "suspicion" in data[machine] else self.suspicion_enabled
                         if not (machine in self.member_list):
                             local_time = int(time.time())
-                            # If suspicion key doesn't exist, new node, set to whatever current suspicion value is
-                            suspicion_val = bool(data[machine]["suspicion"]) if "suspicion" in data[machine] else self.suspicion_enabled
                             self.member_list[machine] = {
                                 "heartbeat_counter" : data[machine]["heartbeat_counter"],
                                 "timestamp" : local_time,
