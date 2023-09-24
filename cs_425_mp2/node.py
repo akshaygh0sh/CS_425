@@ -104,6 +104,7 @@ class Node:
                                 if (received_heartbeat_count > current_heartbeat_count):
                                     local_time = int(time.time())
                                     if (machine == self.id and data[self.id]["suspect"]):
+                                        print("I'm suspected...")
                                         # Other node is saying that we have been suspected of failure
                                         # need to reincarnate and gossip
                                         self.update_id()
@@ -172,6 +173,8 @@ class Node:
                                 
                             for entry in stale_entries:
                                 self.logger.warning(f"Heartbeat timeout, removing {entry} from membership list")
+                                print(f"\nHeartbeat timeout, removing {entry} from membership list")
+                                sys.stdout.flush()
                                 del self.member_list[entry]
 
                             self.logger.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
