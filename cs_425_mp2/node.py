@@ -88,8 +88,6 @@ class Node:
                     self.logger.info(f"Machine {self.id} received heartbeat data: {data}")
                     for machine in data:   
                         if (machine != "suspicion"):
-                            print("Membership list:", self.member_list)
-                            print("Data keys:", data.keys()) 
                             # New machine, update current membership list
                             if not (machine in self.member_list):
                                 local_time = int(time.time())
@@ -104,9 +102,10 @@ class Node:
                                 current_heartbeat_count = self.member_list[machine]["heartbeat_counter"]
                                 local_time = int(time.time())
                                 if (machine == self.id and data[self.id]["suspect"]):
-                                    print("I'm suspected...")
+                                    print(f"\nCurrently suspected to have failed. Transmitted message that we are still alive")
                                     # Other node is saying that we have been suspected of failure
                                     # need to reincarnate and gossip
+                                    del self.member_list[self.id]
                                     self.update_id()
                                     self.member_list[self.id] = {
                                         "heartbeat_counter" : 1,
@@ -132,7 +131,7 @@ class Node:
                                     print(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
                                     sys.stdout.flush()
             except Exception as e:
-                print("Error while listening:", e) 
+                print("Error while listening:", e)  
     
     def heartbeat(self):
         while True:
