@@ -116,6 +116,7 @@ class Node:
                                     self.member_list["suspicion"] = data["suspicion"]
                                     self.set_suspicion(self.member_list["suspicion"]["enabled"])
                                     print(f"\nSuspicion: {'enabled' if self.suspicion_enabled else 'disabled'}")
+                                    sys.stdout.flush()
 
             except Exception as e:
                 print("Error while listening:", e)
