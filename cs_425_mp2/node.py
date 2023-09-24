@@ -130,24 +130,24 @@ class Node:
                 if (random_num > self.drop_rate):
                     # Only send heartbeats if the node has "joined" the group
                     if self.is_active:
-                        if not ("suspicion" in self.member_list):
-                            self.member_list["suspicion"] = {
-                                "counter" : 1,
-                                "enabled" : self.suspicion_enabled
-                            }
-                        else:
-                            if (self.get_suspicion() != self.member_list["suspicion"]["enabled"]):
-                                self.member_list["suspicion"] = {
-                                    "counter" : self.member_list["suspicion"]["counter"] + 1,
-                                    "enabled" : self.get_suspicion()
-                                }
-                        
-                        if (self.id in self.member_list):
-                            self.member_list[self.id]["heartbeat_counter"] += 1
-                            self.member_list[self.id]["timestamp"] = local_time
-                        
                         # Prune membership list - delete failed nodes
                         with self.member_list_lock:
+                            if not ("suspicion" in self.member_list):
+                                self.member_list["suspicion"] = {
+                                    "counter" : 1,
+                                    "enabled" : self.suspicion_enabled
+                                }
+                            else:
+                                if (self.get_suspicion() != self.member_list["suspicion"]["enabled"]):
+                                    self.member_list["suspicion"] = {
+                                        "counter" : self.member_list["suspicion"]["counter"] + 1,
+                                        "enabled" : self.get_suspicion()
+                                    }
+                            
+                            if (self.id in self.member_list):
+                                self.member_list[self.id]["heartbeat_counter"] += 1
+                                self.member_list[self.id]["timestamp"] = local_time
+
                             stale_entries = []
                             for machine_id in self.member_list.keys():
                                 if (machine_id != "suspicion"):
