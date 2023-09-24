@@ -17,8 +17,8 @@ class Node:
         "fa23-cs425-5610.cs.illinois.edu"
     ]
 
-    # Set heartbeat interval to 2 seconds
-    HEARBEAT_INTERVAL = 2
+    # Set heartbeat interval to 1 second
+    HEARBEAT_INTERVAL = 1
     T_FAIL = 2
     T_CLEANUP = 2
 
