@@ -107,6 +107,9 @@ class Node:
                                     # need to reincarnate and gossip
                                     self.join_group()
                                     self.logger.info(f"Suspected node ({self.id}) is actually alive. Updated entry: {self.member_list[machine]}")
+
+                                    # Reset drop_rate for demo purposes
+                                    self.drop_rate = 0
                                 # Newer heartbeat, update entry
                                 elif (received_heartbeat_count > current_heartbeat_count):
                                     self.member_list[machine]["heartbeat_counter"] = received_heartbeat_count        
