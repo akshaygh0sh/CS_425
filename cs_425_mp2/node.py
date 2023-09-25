@@ -19,8 +19,8 @@ class Node:
 
     # Set heartbeat interval to 1 second
     HEARBEAT_INTERVAL = 1
-    T_FAIL = 2
-    T_CLEANUP = 2
+    T_FAIL = 3
+    T_CLEANUP = 1
 
     def __init__(self):
         self.ip, self.current_machine_ix,  = self.get_info()
