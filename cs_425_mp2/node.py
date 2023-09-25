@@ -194,8 +194,8 @@ class Node:
             target_machines.remove(self.current_machine_ix)
         # bandwidth_bytes_per_second = float(0.0)
         # # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
-        # for machine_ix in target_machines:
-        #     bandwidth_bytes_per_second += self.send(machine_ix, message)
+        for machine_ix in target_machines:
+            bandwidth_bytes_per_second += self.send(machine_ix, message)
         # bandwidth_bytes_per_second /= len(target_machines)
         
         # with open("out_going_bandwidth.txt", "a+") as file:
