@@ -201,8 +201,8 @@ class Node:
                 bandwidth_bytes_per_second += self.send(machine_ix, message)
             bandwidth_bytes_per_second /= len(target_machines)
             
-            with open("out_going_bandwidth.txt", "a+") as file:
-                file.write(f"Bandwidth: {bandwidth_bytes_per_second} bytes/second\n")
+            with open("out_going_bandwidth.txt", "w") as file:
+                file.write(f"{bandwidth_bytes_per_second}\n")
 
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
