@@ -36,7 +36,7 @@ def create_grep_files(machine_ix, grep_command, print_lock, is_demo):
     try:
         tcp_socket.connect((machine, remote_port))
 
-        file_path = f"../vm{machine_ix}.log" if is_demo else 'machine.i.log'
+        file_path = "/home/gdurand2/CS_425/cs_425_mp2/out_going_bandwidth.txt" if is_demo else 'machine.i.log'
 
         commands = [
             f"{grep_command} {file_path} > result.txt"
