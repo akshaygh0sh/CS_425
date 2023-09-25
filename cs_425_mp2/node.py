@@ -192,14 +192,14 @@ class Node:
         # Remove current machine from gossip targets
         if (self.current_machine_ix in target_machines):
             target_machines.remove(self.current_machine_ix)
-        bandwidth_bytes_per_second = float(0.0)
-        # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
-        for machine_ix in target_machines:
-            bandwidth_bytes_per_second += self.send(machine_ix, message)
-        bandwidth_bytes_per_second /= len(target_machines)
+        # bandwidth_bytes_per_second = float(0.0)
+        # # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
+        # for machine_ix in target_machines:
+        #     bandwidth_bytes_per_second += self.send(machine_ix, message)
+        # bandwidth_bytes_per_second /= len(target_machines)
         
-        with open("out_going_bandwidth.txt", "a+") as file:
-            file.write(f"{bandwidth_bytes_per_second}\n")
+        # with open("out_going_bandwidth.txt", "a+") as file:
+        #     file.write(f"{bandwidth_bytes_per_second}\n")
 
     # Attempts to join the membership group (via introducer on machine 1)
     def join_group(self):
