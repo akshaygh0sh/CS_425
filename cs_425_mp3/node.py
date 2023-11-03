@@ -313,8 +313,9 @@ class Server:
                 update_request["version"] = 1
 
             self.file_list[sfds_file_name]["version"] = update_request["version"]
-            for node in file_locations:
-                self.send(message = json.dumps(update_request).encode())
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                for node in file_locations:
+                    s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
 
             self.file_list[sfds_file_name]["contents"] = file_contents
         self.file_list[sfds_file_name]["locations"] = file_locations
