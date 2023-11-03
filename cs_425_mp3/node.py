@@ -75,7 +75,8 @@ class Server:
         # Incarnation number for handling suspicion.
         self.incarnation = 0
         # Thread-safe lock for synchronization.
-        self.rlock = threading.RLock()
+        self.membership_lock = threading.Lock()
+        self.file_list_lock = threading.Lock()
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
@@ -91,7 +92,7 @@ class Server:
 
     def print_id(self):
         # Method to print the unique ID of the server.
-        with self.rlock:
+        with self.membership_lock:
             print(self.id)
         
     def index_to_ip(self, index):
@@ -106,7 +107,7 @@ class Server:
             print("File not found in SFDS")
     
     def store(self):
-        with self.rlock:
+        with self.file_list_lock:
             stored_files = []
             for key in self.file_list:
                 if (self.current_machine_ix in self.file_list[key]["locations"]):
@@ -116,7 +117,7 @@ class Server:
 
     def update_membership_list(self, membershipList):
         # Method to update the membership list of the server with received information.
-        with self.rlock:
+        with self.membership_lock:
             # Iterate through the received membership list.
             for member_id, member_info in membershipList.items():
                 if member_info['heartbeat'] == 0:
@@ -162,7 +163,7 @@ class Server:
 
     def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
-        with self.rlock:
+        with self.membership_lock:
             now = int(time.time())
             # Calculate the threshold time
             failure_threshold_time = now - self.failure_time_threshold
@@ -184,7 +185,7 @@ class Server:
 
     def detect_failed_nodes(self):
         # Method to detect and handle failed members in the membership list for the gossip protocol.
-        with self.rlock:
+        with self.membership_lock:
             now = int(time.time())
             # Calculate the threshold time
             threshold_time = now - self.failure_time_threshold
@@ -197,7 +198,7 @@ class Server:
 
     def remove_failed_nodes(self):
         # Remove the members from the failMembershipList
-        with self.rlock:
+        with self.membership_lock:
             now = int(time.time())
             threshold_time = now - self.cleanup_time_threshold
             fail_members_to_remove = [member_id for member_id, fail_time in self.failed_nodes.items() if fail_time < threshold_time]
@@ -206,7 +207,7 @@ class Server:
 
     def json(self):
         # Method to generate a JSON representation of the server's membership information.
-        with self.rlock:
+        with self.membership_lock:
             if self.gossipS:
             # If using GossipS protocol, include additional information like status and incarnation.
                 return {
@@ -232,7 +233,7 @@ class Server:
 
     def print_membership_list(self):
         # Method to print the membership list to the log file and return it as a string.
-        with self.rlock:
+        with self.membership_lock:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_message = f"{timestamp} ==============================================================\n"
             log_message += f" {str(self.failed_nodes)}\n"
@@ -244,7 +245,7 @@ class Server:
 
     def select_gossip_targets(self):
         # Method to randomly choose members from the membership list to send messages to.
-        with self.rlock:
+        with self.membership_lock:
             candidates = list(self.membership_list.keys())
             random.shuffle(candidates)  # Shuffle the list in-place
             return candidates[:self.n_send]
@@ -296,7 +297,7 @@ class Server:
         Decide where file and replicas should be stored, then gossip
         the dictionary
         """
-        with self.rlock:
+        with self.file_list_lock:
             file_locations = self.get_file_locations(sfds_file_name)
             with open(local_file_name, 'r') as local_file:
                 file_contents = local_file.read()
@@ -326,7 +327,7 @@ class Server:
             print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
     def handle_update_request(self, update_request):
-        with self.rlock:
+        with self.file_list_lock:
             message_content = update_request["update_request"]
             print(message_content)
             sfds_file_name = message_content["file_name"]
@@ -344,7 +345,7 @@ class Server:
             print("After update request", self.file_list)
 
     def handle_get_request(self, get_message):
-        with self.rlock:
+        with self.file_list_lock:
             sfds_file_name = get_message["get_request"]["file_name"]
             target_node = get_message["get_request"]["from"]
             if (sfds_file_name in self.file_list):
@@ -464,7 +465,7 @@ class Server:
                     
     def update_heartbeat(self):
         # Method to update the server's heartbeat and refresh its status in the membership list.
-        with self.rlock:
+        with self.membership_lock:
             self.heartbeat += 1
             self.membership_list[self.id]["status"] = "Alive"
             self.membership_list[self.id]["heartbeat"] = self.heartbeat
