@@ -7,6 +7,7 @@ import random
 import datetime
 import logging
 import argparse
+import hashlib
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -24,7 +25,7 @@ HOST_NAME_LIST = [
     'fa23-cs425-5610.cs.illinois.edu',
 ]
 # 'Introducor' specifies the introducer node's hostname, which plays a crucial role in system coordination.
-Introducor = 'fa23-cs425-5602.cs.illinois.edu'
+Introducor = 'fa23-cs425-5601.cs.illinois.edu'
 
 # 'DEFAULT_PORT_NUM' defines the default port number used for communication within the system.
 DEFAULT_PORT_NUM = 12360
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 class Server:
     def __init__(self,args):
         # Initialize the server with various attributes.
-        self.ip = socket.gethostname()
+        self.ip, self.current_machine_ix,  = self.get_info()
         self.port = DEFAULT_PORT_NUM
         self.heartbeat = 0
         self.timejoin = int(time.time())
@@ -79,13 +80,41 @@ class Server:
         self.enable_sending = True
         self.gossipS = False
 
-    
-    def printID(self):
+    def get_info(self):
+        try:
+            hostname = socket.gethostname()
+            current_machine_ix = hostname[13 : 15]
+            local_ip = socket.gethostbyname(hostname)
+            return local_ip, int(current_machine_ix)
+        except Exception as e:
+            print("Error:", e)
+
+    def print_id(self):
         # Method to print the unique ID of the server.
         with self.rlock:
             print(self.id)
+        
+    def index_to_ip(self, index):
+        index = "0" + str(index) if index < 10 else str(index)
+        return f"fa23-cs425-56{index}.cs.illinois.edu"
 
-    def updateMembershipList(self, membershipList):
+    def ls_files(self, remote_file):
+        if (remote_file in self.file_list):
+            for node in self.file_list[remote_file]["locations"]:
+                print(self.index_to_ip(node))
+        else:
+            print("File not found in SFDS")
+    
+    def store(self):
+        with self.rlock:
+            stored_files = []
+            for key in self.file_list:
+                if (self.current_machine_ix in self.file_list[key]["locations"]):
+                    stored_files.append(key)
+            for file in stored_files:
+                print(f"{file} stored at machine {self.current_machine_ix}")
+
+    def update_membership_list(self, membershipList):
         # Method to update the membership list of the server with received information.
         with self.rlock:
             # Iterate through the received membership list.
@@ -131,7 +160,7 @@ class Server:
                         print(log_message)
                     logger.info("[JOIN]   - {}".format(member_id))
 
-    def detectSuspectAndFailMember(self):
+    def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
         with self.rlock:
             now = int(time.time())
@@ -153,7 +182,7 @@ class Server:
                 del self.membership_list[member_id]
                 logger.info("[DELETE] - {}".format(member_id))
 
-    def detectFailMember(self):
+    def detect_failed_nodes(self):
         # Method to detect and handle failed members in the membership list for the gossip protocol.
         with self.rlock:
             now = int(time.time())
@@ -166,7 +195,7 @@ class Server:
                 del self.membership_list[member_id]
                 logger.info("[DELETE] - {}".format(member_id))
 
-    def removeFailMember(self):
+    def remove_failed_nodes(self):
         # Remove the members from the failMembershipList
         with self.rlock:
             now = int(time.time())
@@ -201,7 +230,7 @@ class Server:
                     for m in self.membership_list.values()
                 }
 
-    def printMembershipList(self):
+    def print_membership_list(self):
         # Method to print the membership list to the log file and return it as a string.
         with self.rlock:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -213,7 +242,7 @@ class Server:
                 log_file.write(log_message)
             return(log_message)
 
-    def chooseMemberToSend(self):
+    def select_gossip_targets(self):
         # Method to randomly choose members from the membership list to send messages to.
         with self.rlock:
             candidates = list(self.membership_list.keys())
@@ -237,18 +266,119 @@ class Server:
                             continue
                         else:
                             msgs = json.loads(data.decode('utf-8'))
-                            # * print out the info of the received message
-                            self.updateMembershipList(msgs) 
+                            if ("update_request" in msgs):
+                                self.handle_update_request()
+                            elif ("get_request" in msgs):
+                                self.handle_get_request(msgs)
+                            elif ("delete_request" in msgs):
+                                self.handle_delete_request()
+                            elif ("get_response" in msgs):
+                                self.handle_get_response(msgs)
+                            else:
+                                self.update_membership_list(msgs) 
                 except Exception as e:
                     print(e)
+
+    def get_original_location(self, file_name):
+        # Get hash for file
+        hash_obj = hashlib.md5(file_name.encode())
+        hash_hex = hash_obj.hexdigest()
+        hash_int = int(hash_hex, 16)
+        return (hash_int % 10) + 1
+
+    # Return list of all nodes at which file is stored
+    def get_file_locations(self, file_name):
+        original_location = self.get_original_location(file_name)
+        return [(original_location + ix) % 10 + 1 for ix in range(4)]
 
     def upload_file(self, local_file_name, sfds_file_name):
         """
         Decide where file and replicas should be stored, then gossip
         the dictionary
         """
-        
+        file_locations = self.get_file_locations(sfds_file_name)
+        with open(local_file_name, 'r') as local_file:
+            file_contents = local_file.read()
+            update_request = {
+                        "update_request" : {
+                            "file_name" : sfds_file_name,
+                            "replicas" : file_locations[1:],
+                            "content" : file_contents
+                        }
+                    }
+            if (sfds_file_name in self.file_list):
+                update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
+            else:
+                update_request["version"] = 1
 
+            self.file_list[sfds_file_name]["version"] = update_request["version"]
+            for node in file_locations:
+                self.send(message = json.dumps(update_request).encode())
+
+            self.file_list[sfds_file_name]["contents"] = file_contents
+        self.file_list[sfds_file_name]["locations"] = file_locations
+        
+    def handle_update_request(self, update_request):
+        message_content = update_request["update_request"]
+        sfds_file_name = message_content["file_name"]
+        if (sfds_file_name in self.file_list):
+            # More recent version, update
+            if (message_content["version"] > self.file_list[sfds_file_name]["version"]):
+                self.file_list[sfds_file_name]["version"] = message_content["version"]
+                self.file_list[sfds_file_name]["contents"] = message_content["contents"]
+                self.file_list[sfds_file_name]["locations"] = message_content["locations"]
+        # First time updating
+        else:
+            self.file_list[sfds_file_name]["version"] = 1
+            self.file_list[sfds_file_name]["contents"] = message_content["contents"]
+            self.file_list[sfds_file_name]["locations"] = message_content["locations"]
+
+    def handle_get_request(self, get_message):
+        sfds_file_name = get_message["get_request"]["file_name"]
+        target_node = get_message["get_request"]["from"]
+        if (sfds_file_name in self.file_list):
+            get_response = {
+                "get_response" : {
+                    "file_name" : sfds_file_name,
+                    "contents" : self.file_list[sfds_file_name]["contents"],
+                    "status" : "success"
+                }
+            }
+        else:
+            get_response = {
+                "get_response" : {
+                    "file_name" : sfds_file_name,
+                    "status" : "failure"
+                }
+            }
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
+
+    def handle_delete_request(self, delete_message):
+        pass
+
+    def send_get_request(self, sfds_file_name):
+        file_location = self.get_file_locations(sfds_file_name)
+        get_request = {
+            "get_request" : {
+                "file_name" : sfds_file_name,
+                "from" : self.current_machine_ix
+            }
+        }
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM))    
+        
+    def handle_get_response(self, message):
+        get_response = message["get_response"]
+        file_name = get_response["file_name"]
+        if get_response["status"] == "success":
+            file_contents = get_response["contents"]
+            with open(file_name, "w") as file:
+                file.write(file_contents)
+            print(f"Received contents of {file_name}")
+        else:
+            print(f"Error when attempting to fetch contents of {file_name}")
 
     def user_input(self):
         """
@@ -256,7 +386,7 @@ class Server:
         :param enable_sending: True to enable sending, False to disable sending.
         """
         while True:
-            user_input = input("Enter 'join' to start sending, 'leave' to leave the group, 'enable suspicion' for GOSSIP+S mode and 'disable suspicion' for GOSSIP mode, 'list_mem' to list members and 'list_self' to list self info:\n")
+            user_input = input("Enter command: (or 'exit' to terminate): ")
             if user_input == 'join':
                 self.enable_sending = True
                 print("Starting to send messages.")
@@ -281,12 +411,22 @@ class Server:
                 self.gossipS = False
                 print("Stopping gossip S.")
             elif user_input == 'list_mem':
-                print(self.printMembershipList())
+                print(self.print_membership_list())
             elif user_input == 'list_self':
-                self.printID()
+                self.print_id()
             elif user_input.startswith('put'):
                 info = user_input.split(sep = ' ')
                 self.upload_file(info[1], info[2])
+            elif user_input.startswith('get'):
+                info = user_input.split(sep = ' ')
+                self.send_get_request(info[1])
+            elif user_input.startswith('ls '):
+                info = user_input.split(sep = ' ')
+                self.ls_files(info[1])
+            elif user_input == 'store':
+                self.store()
+            elif user_input.lower() == 'exit':
+                break
             else:
                 print("Invalid input.")
 
@@ -301,7 +441,7 @@ class Server:
                 try:
                     if self.enable_sending:  # Check if sending is enabled
                         self.update_heartbeat()
-                        peers = self.chooseMemberToSend()
+                        peers = self.select_gossip_targets()
                         for peer in peers:
                             send_msg = self.json() if message is None else message
                             s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
@@ -318,11 +458,11 @@ class Server:
             self.membership_list[self.id]["time"] = time.time()
             self.membership_list[self.id]["incarnation"] = self.incarnation
             if self.gossipS:
-                self.detectSuspectAndFailMember()
+                self.suspect_nodes()
             else:
-                self.detectFailMember()
-            self.removeFailMember()
-            self.printMembershipList()
+                self.detect_failed_nodes()
+            self.remove_failed_nodes()
+            self.print_membership_list()
 
     def run(self):
         """
