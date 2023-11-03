@@ -305,7 +305,7 @@ class Server:
                             "update_request" : {
                                 "file_name" : sfds_file_name,
                                 "replicas" : file_locations[1:],
-                                "content" : file_contents
+                                "contents" : file_contents
                             }
                         }
                 if (sfds_file_name in self.file_list):
