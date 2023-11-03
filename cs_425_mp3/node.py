@@ -12,19 +12,19 @@ import argparse
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
 
 HOST_NAME_LIST = [
-    'fa23-cs425-8001.cs.illinois.edu',
-    'fa23-cs425-8002.cs.illinois.edu',
-    'fa23-cs425-8003.cs.illinois.edu',
-    'fa23-cs425-8004.cs.illinois.edu',
-    'fa23-cs425-8005.cs.illinois.edu',
-    'fa23-cs425-8006.cs.illinois.edu',
-    'fa23-cs425-8007.cs.illinois.edu',
-    'fa23-cs425-8008.cs.illinois.edu',
-    'fa23-cs425-8009.cs.illinois.edu',
-    'fa23-cs425-8010.cs.illinois.edu',
+    'fa23-cs425-5601.cs.illinois.edu',
+    'fa23-cs425-5602.cs.illinois.edu',
+    'fa23-cs425-5603.cs.illinois.edu',
+    'fa23-cs425-5604.cs.illinois.edu',
+    'fa23-cs425-5605.cs.illinois.edu',
+    'fa23-cs425-5606.cs.illinois.edu',
+    'fa23-cs425-5607.cs.illinois.edu',
+    'fa23-cs425-5608.cs.illinois.edu',
+    'fa23-cs425-5609.cs.illinois.edu',
+    'fa23-cs425-5610.cs.illinois.edu',
 ]
 # 'Introducor' specifies the introducer node's hostname, which plays a crucial role in system coordination.
-Introducor = 'fa23-cs425-8002.cs.illinois.edu'
+Introducor = 'fa23-cs425-5602.cs.illinois.edu'
 
 # 'DEFAULT_PORT_NUM' defines the default port number used for communication within the system.
 DEFAULT_PORT_NUM = 12360
