@@ -296,70 +296,73 @@ class Server:
         Decide where file and replicas should be stored, then gossip
         the dictionary
         """
-        file_locations = self.get_file_locations(sfds_file_name)
-        with open(local_file_name, 'r') as local_file:
-            file_contents = local_file.read()
-            update_request = {
-                        "update_request" : {
-                            "file_name" : sfds_file_name,
-                            "replicas" : file_locations[1:],
-                            "content" : file_contents
+        with self.rlock:
+            file_locations = self.get_file_locations(sfds_file_name)
+            with open(local_file_name, 'r') as local_file:
+                file_contents = local_file.read()
+                update_request = {
+                            "update_request" : {
+                                "file_name" : sfds_file_name,
+                                "replicas" : file_locations[1:],
+                                "content" : file_contents
+                            }
                         }
-                    }
-            if (sfds_file_name in self.file_list):
-                update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
-            else:
-                self.file_list[sfds_file_name] = {}
-                update_request["version"] = 1
+                if (sfds_file_name in self.file_list):
+                    update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
+                else:
+                    self.file_list[sfds_file_name] = {}
+                    update_request["version"] = 1
 
-            self.file_list[sfds_file_name]["version"] = update_request["version"]
-            
+                self.file_list[sfds_file_name]["version"] = update_request["version"]
+                
 
-            self.file_list[sfds_file_name]["contents"] = file_contents
-            # Send update request to necessary nodes
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                for node in file_locations:
-                    s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
+                self.file_list[sfds_file_name]["contents"] = file_contents
+                # Send update request to necessary nodes
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    for node in file_locations:
+                        s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
 
-        self.file_list[sfds_file_name]["locations"] = file_locations
-        print(f"Putting file {sfds_file_name} on machines {file_locations}")
+            self.file_list[sfds_file_name]["locations"] = file_locations
+            print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
     def handle_update_request(self, update_request):
-        message_content = update_request["update_request"]
-        sfds_file_name = message_content["file_name"]
-        if (sfds_file_name in self.file_list):
-            # More recent version, update
-            if (message_content["version"] > self.file_list[sfds_file_name]["version"]):
-                self.file_list[sfds_file_name]["version"] = message_content["version"]
+        with self.rlock:
+            message_content = update_request["update_request"]
+            sfds_file_name = message_content["file_name"]
+            if (sfds_file_name in self.file_list):
+                # More recent version, update
+                if (message_content["version"] > self.file_list[sfds_file_name]["version"]):
+                    self.file_list[sfds_file_name]["version"] = message_content["version"]
+                    self.file_list[sfds_file_name]["contents"] = message_content["contents"]
+                    self.file_list[sfds_file_name]["locations"] = message_content["locations"]
+            # First time updating
+            else:
+                self.file_list[sfds_file_name]["version"] = 1
                 self.file_list[sfds_file_name]["contents"] = message_content["contents"]
                 self.file_list[sfds_file_name]["locations"] = message_content["locations"]
-        # First time updating
-        else:
-            self.file_list[sfds_file_name]["version"] = 1
-            self.file_list[sfds_file_name]["contents"] = message_content["contents"]
-            self.file_list[sfds_file_name]["locations"] = message_content["locations"]
 
     def handle_get_request(self, get_message):
-        sfds_file_name = get_message["get_request"]["file_name"]
-        target_node = get_message["get_request"]["from"]
-        if (sfds_file_name in self.file_list):
-            get_response = {
-                "get_response" : {
-                    "file_name" : sfds_file_name,
-                    "contents" : self.file_list[sfds_file_name]["contents"],
-                    "status" : "success"
+        with self.rlock:
+            sfds_file_name = get_message["get_request"]["file_name"]
+            target_node = get_message["get_request"]["from"]
+            if (sfds_file_name in self.file_list):
+                get_response = {
+                    "get_response" : {
+                        "file_name" : sfds_file_name,
+                        "contents" : self.file_list[sfds_file_name]["contents"],
+                        "status" : "success"
+                    }
                 }
-            }
-        else:
-            get_response = {
-                "get_response" : {
-                    "file_name" : sfds_file_name,
-                    "status" : "failure"
+            else:
+                get_response = {
+                    "get_response" : {
+                        "file_name" : sfds_file_name,
+                        "status" : "failure"
+                    }
                 }
-            }
 
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
 
     def handle_delete_request(self, delete_message):
         pass
