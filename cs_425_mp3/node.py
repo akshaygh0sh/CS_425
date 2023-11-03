@@ -314,7 +314,7 @@ class Server:
 
             self.file_list[sfds_file_name]["version"] = update_request["version"]
             for node in file_locations:
-                self.send(message = json.dumps(update_request.encode()))
+                self.send(message = json.dumps(update_request).encode())
 
             self.file_list[sfds_file_name]["contents"] = file_contents
         self.file_list[sfds_file_name]["locations"] = file_locations
