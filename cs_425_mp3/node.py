@@ -340,6 +340,7 @@ class Server:
                 self.file_list[sfds_file_name]["version"] = 1
                 self.file_list[sfds_file_name]["contents"] = message_content["contents"]
                 self.file_list[sfds_file_name]["locations"] = message_content["locations"]
+            print("After update request", self.file_list)
 
     def handle_get_request(self, get_message):
         with self.rlock:
