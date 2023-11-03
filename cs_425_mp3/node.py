@@ -431,6 +431,8 @@ class Server:
                 self.ls_files(info[1])
             elif user_input == 'store':
                 self.store()
+            elif user_input == 'file_list':
+                print(self.file_list)
             elif user_input.lower() == 'exit':
                 break
             else:
