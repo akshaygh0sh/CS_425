@@ -267,7 +267,7 @@ class Server:
                         else:
                             msgs = json.loads(data.decode('utf-8'))
                             if ("update_request" in msgs):
-                                self.handle_update_request()
+                                self.handle_update_request(msgs)
                             elif ("get_request" in msgs):
                                 self.handle_get_request(msgs)
                             elif ("delete_request" in msgs):
