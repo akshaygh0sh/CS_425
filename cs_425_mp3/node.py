@@ -339,6 +339,7 @@ class Server:
                     self.file_list[sfds_file_name]["locations"] = message_content["locations"]
             # First time updating
             else:
+                self.file_list[sfds_file_name] = {}
                 self.file_list[sfds_file_name]["version"] = 1
                 self.file_list[sfds_file_name]["contents"] = message_content["contents"]
                 self.file_list[sfds_file_name]["locations"] = message_content["locations"]
