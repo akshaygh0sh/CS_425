@@ -272,7 +272,7 @@ class Server:
                             elif ("get_request" in msgs):
                                 self.handle_get_request(msgs)
                             elif ("delete_request" in msgs):
-                                self.handle_delete_request()
+                                self.handle_delete_request(msgs)
                             elif ("get_response" in msgs):
                                 self.handle_get_response(msgs)
                             else:
@@ -361,10 +361,59 @@ class Server:
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
+    
+    def send_delete_request(self, filename):
+        file_location = self.get_file_locations(filename)
+        delete_request = {
+            "delete_request" : {
+                "file_name" : filename,
+                "from" : self.current_machine_ix
+            }
+        }
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            for location in file_location:
+                s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+    
 
     def handle_delete_request(self, delete_message):
-        pass
+        #to do
+        with self.file_list_lock:
+            sfds_file_name = delete_message["delete_request"]["file_name"]
+            target_node = delete_message["delete_request"]["from"]
+            if (sfds_file_name in self.file_list):
+                del self.file_list[sfds_file_name] # is this legal?
+                delete_response = {
+                    "delete_response" : {
+                        "file_name" : sfds_file_name,
+                        "status" : "success",
+                        "from" : target_node
+                    }
+                }
+            else:
+                delete_response = {
+                    "delete_response" : {
+                        "file_name" : sfds_file_name,
+                        "status" : "failure",
+                        "from" : target_node
+                    }
+                }
 
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+
+
+                
+    def handle_delete_response(self, message):
+        delete_response = message["delete_response"]
+        file_name = delete_response["file_name"]
+        delete_from = delete_response["from"]
+        if delete_response["status"] == "success":
+            print(f"DELETE request succeeded: deleleted {file_name}, from {delete_from}")
+        else:
+            print(f"Error when attempting to deleting contents of {file_name}, from {delete_from}")
+
+    
+        
     def send_get_request(self, sfds_file_name):
         file_location = self.get_file_locations(sfds_file_name)
         get_request = {
@@ -383,9 +432,10 @@ class Server:
             file_contents = get_response["contents"]
             with open(file_name, "w") as file:
                 file.write(file_contents)
-            print(f"Received contents of {file_name}")
+            print(f"GET request succeeded: received contents of {file_name}")
         else:
             print(f"Error when attempting to fetch contents of {file_name}")
+    
 
     def user_input(self):
         """
@@ -427,6 +477,9 @@ class Server:
             elif user_input.startswith('get'):
                 info = user_input.split(sep = ' ')
                 self.send_get_request(info[1])
+            elif user_input.startswith('delete'):
+                info = user_input.split(sep = ' ')
+                self.send_delete_request(info[1])
             elif user_input.startswith('ls '):
                 info = user_input.split(sep = ' ')
                 self.ls_files(info[1])
