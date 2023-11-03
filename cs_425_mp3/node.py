@@ -47,7 +47,7 @@ class Server:
         self.timejoin = int(time.time())
         self.id = f"{self.ip}:{self.port}:{self.timejoin}"
         self.addr = (self.ip, self.port)
-        self.MembershipList = {
+        self.membership_list = {
                 f"{ip}:{port}:{self.timejoin}": {
                 "id": f"{ip}:{port}:{self.timejoin}",
                 "addr": (ip, port),
@@ -58,8 +58,9 @@ class Server:
             }
             for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
         }
+        self.file_list = {}
         # List to track failed members.
-        self.failMemberList = {}
+        self.failed_nodes = {}
         # Thresholds for various time-based criteria.
         self.failure_time_threshold = 7
         self.cleanup_time_threshold = 7
@@ -92,7 +93,7 @@ class Server:
                 if member_info['heartbeat'] == 0:
                     # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
                     continue
-                if member_id in self.failMemberList:
+                if member_id in self.failed_nodes:
                     # Skip members that are already in the failed members list.
                     continue
 
@@ -104,29 +105,29 @@ class Server:
                          if self.incarnation < member_info["incarnation"]:
                             self.incarnation = member_info["incarnation"] + 1
                 # Check if the member is already in the MembershipList
-                if member_id in self.MembershipList:
-                    current_heartbeat = self.MembershipList[member_id]["heartbeat"]
+                if member_id in self.membership_list:
+                    current_heartbeat = self.membership_list[member_id]["heartbeat"]
                     # Incarnation overwrite heartbeat
-                    if member_info["incarnation"] > self.MembershipList[member_id]["incarnation"]:
-                        self.MembershipList[member_id] = member_info
-                        self.MembershipList[member_id]["time"] = time.time()
+                    if member_info["incarnation"] > self.membership_list[member_id]["incarnation"]:
+                        self.membership_list[member_id] = member_info
+                        self.membership_list[member_id]["time"] = time.time()
                         #if suspect print out
-                        if self.MembershipList[member_id]["status"] == "Suspect":
+                        if self.membership_list[member_id]["status"] == "Suspect":
                             logger.info("[SUS]    - {}".format(member_id))
-                            log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.MembershipList[member_id]['status']}, Time: {self.MembershipList[member_id]['time']}\n"
+                            log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
                             print(log_message)
                     # Update only if the received heartbeat is greater and both at the same incarnation
-                    elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.MembershipList[member_id]["incarnation"]:
-                        self.MembershipList[member_id] = member_info
-                        self.MembershipList[member_id]["time"] = time.time()
+                    elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
+                        self.membership_list[member_id] = member_info
+                        self.membership_list[member_id]["time"] = time.time()
                 else:
                     # If the member is not in the MembershipList, add it
-                    self.MembershipList[member_id] = member_info
-                    self.MembershipList[member_id]["time"] = time.time()
+                    self.membership_list[member_id] = member_info
+                    self.membership_list[member_id]["time"] = time.time()
                     # If suspect print out 
-                    if self.MembershipList[member_id]["status"] == "Suspect":
+                    if self.membership_list[member_id]["status"] == "Suspect":
                         logger.info("[SUS]    - {}".format(member_id))
-                        log_message = f"Newmem        : ID: {member_id}, Status: {self.MembershipList[member_id]['status']}, Time: {self.MembershipList[member_id]['time']}\n"
+                        log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
                         print(log_message)
                     logger.info("[JOIN]   - {}".format(member_id))
 
@@ -138,18 +139,18 @@ class Server:
             failure_threshold_time = now - self.failure_time_threshold
             suspect_threshold_time = now - self.suspect_time_threshold
             # Collect members to remove
-            suspect_members_detected = [member_id for member_id, member_info in self.MembershipList.items() if member_info['time'] < failure_threshold_time and member_info["status"] != "Suspect"]
+            suspect_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < failure_threshold_time and member_info["status"] != "Suspect"]
             for member_id in suspect_members_detected:
-                self.MembershipList[member_id]["status"] = "Suspect"
-                self.MembershipList[member_id]["incarnation"] += 1
-                self.MembershipList[member_id]["time"] = now
+                self.membership_list[member_id]["status"] = "Suspect"
+                self.membership_list[member_id]["incarnation"] += 1
+                self.membership_list[member_id]["time"] = now
                 logger.info("[SUS]    - {}".format(member_id))
-                log_message = f"Detected      : ID: {member_id}, Status: {self.MembershipList[member_id]['status']}, Time: {self.MembershipList[member_id]['time']}\n"
+                log_message = f"Detected      : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
                 print(log_message)
-            fail_members_detected = [member_id for member_id, member_info in self.MembershipList.items() if member_info['time'] < suspect_threshold_time and member_id not in self.failMemberList and member_info['status'] == "Suspect"]
+            fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < suspect_threshold_time and member_id not in self.failed_nodes and member_info['status'] == "Suspect"]
             for member_id in fail_members_detected:
-                self.failMemberList[member_id] = now
-                del self.MembershipList[member_id]
+                self.failed_nodes[member_id] = now
+                del self.membership_list[member_id]
                 logger.info("[DELETE] - {}".format(member_id))
 
     def detectFailMember(self):
@@ -159,10 +160,10 @@ class Server:
             # Calculate the threshold time
             threshold_time = now - self.failure_time_threshold
             # Collect members to remove
-            fail_members_detected = [member_id for member_id, member_info in self.MembershipList.items() if member_info['time'] < threshold_time and member_id not in self.failMemberList]
+            fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < threshold_time and member_id not in self.failed_nodes]
             for member_id in fail_members_detected:
-                self.failMemberList[member_id] = now
-                del self.MembershipList[member_id]
+                self.failed_nodes[member_id] = now
+                del self.membership_list[member_id]
                 logger.info("[DELETE] - {}".format(member_id))
 
     def removeFailMember(self):
@@ -170,9 +171,9 @@ class Server:
         with self.rlock:
             now = int(time.time())
             threshold_time = now - self.cleanup_time_threshold
-            fail_members_to_remove = [member_id for member_id, fail_time in self.failMemberList.items() if fail_time < threshold_time]
+            fail_members_to_remove = [member_id for member_id, fail_time in self.failed_nodes.items() if fail_time < threshold_time]
             for member_id in fail_members_to_remove:
-                del self.failMemberList[member_id]
+                del self.failed_nodes[member_id]
 
     def json(self):
         # Method to generate a JSON representation of the server's membership information.
@@ -187,7 +188,7 @@ class Server:
                         'status': m['status'],
                         'incarnation': m['incarnation']
                     }
-                    for m in self.MembershipList.values()
+                    for m in self.membership_list.values()
                 }
             else:
             # If not using GossipS protocol, include basic information like ID, address, and heartbeat.
@@ -197,7 +198,7 @@ class Server:
                         'addr': m['addr'],
                         'heartbeat': m['heartbeat'] ,
                     }
-                    for m in self.MembershipList.values()
+                    for m in self.membership_list.values()
                 }
 
     def printMembershipList(self):
@@ -205,18 +206,17 @@ class Server:
         with self.rlock:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_message = f"{timestamp} ==============================================================\n"
-            log_message += f" {str(self.failMemberList)}\n"
-            for member_id, member_info in self.MembershipList.items():
+            log_message += f" {str(self.failed_nodes)}\n"
+            for member_id, member_info in self.membership_list.items():
                 log_message += f"ID: {member_info['id']}, Heartbeat: {member_info['heartbeat']}, Status: {member_info['status']}, Incarnation:{member_info['incarnation']}, Time: {member_info['time']}\n"
             with open('output.log', 'a') as log_file:
                 log_file.write(log_message)
             return(log_message)
 
-
     def chooseMemberToSend(self):
         # Method to randomly choose members from the membership list to send messages to.
         with self.rlock:
-            candidates = list(self.MembershipList.keys())
+            candidates = list(self.membership_list.keys())
             random.shuffle(candidates)  # Shuffle the list in-place
             return candidates[:self.n_send]
     
@@ -241,6 +241,15 @@ class Server:
                             self.updateMembershipList(msgs) 
                 except Exception as e:
                     print(e)
+
+    def upload_file(self, local_file_name, sfds_file_name):
+        """
+        Decide where file and replicas should be stored, then gossip
+        the dictionary
+        """
+        
+
+
     def user_input(self):
         """
         Toggle the sending process on or off.
@@ -251,7 +260,7 @@ class Server:
             if user_input == 'join':
                 self.enable_sending = True
                 print("Starting to send messages.")
-                self.MembershipList = {
+                self.membership_list = {
                 f"{ip}:{port}:{self.timejoin}": {
                 "id": f"{ip}:{port}:{self.timejoin}",
                 "addr": (ip, port),
@@ -275,10 +284,13 @@ class Server:
                 print(self.printMembershipList())
             elif user_input == 'list_self':
                 self.printID()
+            elif user_input.startswith('put'):
+                info = user_input.split(sep = ' ')
+                self.upload_file(info[1], info[2])
             else:
                 print("Invalid input.")
 
-    def send(self):
+    def send(self, message = None):
         """
         A UDP sender for a node. It sends json message to random N nodes periodically
         and maintain time table for handling timeout issue.
@@ -291,8 +303,8 @@ class Server:
                         self.update_heartbeat()
                         peers = self.chooseMemberToSend()
                         for peer in peers:
-                            send_msg = self.json()
-                            s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.MembershipList[peer]['addr']))
+                            send_msg = self.json() if message is None else message
+                            s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print(e)
@@ -301,10 +313,10 @@ class Server:
         # Method to update the server's heartbeat and refresh its status in the membership list.
         with self.rlock:
             self.heartbeat += 1
-            self.MembershipList[self.id]["status"] = "Alive"
-            self.MembershipList[self.id]["heartbeat"] = self.heartbeat
-            self.MembershipList[self.id]["time"] = time.time()
-            self.MembershipList[self.id]["incarnation"] = self.incarnation
+            self.membership_list[self.id]["status"] = "Alive"
+            self.membership_list[self.id]["heartbeat"] = self.heartbeat
+            self.membership_list[self.id]["time"] = time.time()
+            self.membership_list[self.id]["incarnation"] = self.incarnation
             if self.gossipS:
                 self.detectSuspectAndFailMember()
             else:
@@ -321,7 +333,6 @@ class Server:
 
         :return: None
         """
-        
         receiver_thread = threading.Thread(target=self.receive)
         receiver_thread.daemon = True
         receiver_thread.start()
@@ -340,7 +351,6 @@ class Server:
         receiver_thread.join()
         sender_thread.join()
         user_thread.join()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
