@@ -313,12 +313,16 @@ class Server:
                 update_request["version"] = 1
 
             self.file_list[sfds_file_name]["version"] = update_request["version"]
+            
+
+            self.file_list[sfds_file_name]["contents"] = file_contents
+            # Send update request to necessary nodes
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 for node in file_locations:
                     s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
 
-            self.file_list[sfds_file_name]["contents"] = file_contents
         self.file_list[sfds_file_name]["locations"] = file_locations
+        print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
