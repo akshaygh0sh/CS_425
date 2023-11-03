@@ -328,6 +328,7 @@ class Server:
     def handle_update_request(self, update_request):
         with self.rlock:
             message_content = update_request["update_request"]
+            print(message_content)
             sfds_file_name = message_content["file_name"]
             if (sfds_file_name in self.file_list):
                 # More recent version, update
