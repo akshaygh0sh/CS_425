@@ -309,6 +309,7 @@ class Server:
             if (sfds_file_name in self.file_list):
                 update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
             else:
+                self.file_list[sfds_file_name] = {}
                 update_request["version"] = 1
 
             self.file_list[sfds_file_name]["version"] = update_request["version"]
