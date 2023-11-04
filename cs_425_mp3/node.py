@@ -292,7 +292,7 @@ class Server:
     def get_file_locations(self, file_name):
         original_location = self.get_original_location(file_name)
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
-    def send_large_data_udp(data, target, port):
+    def send_large_data_udp(self, data, target, port):
         MAX_PACKET_SIZE = 65507
         data_str = json.dumps(data)
 
@@ -332,7 +332,7 @@ class Server:
             # Send update request to necessary nodes
             for node in file_locations:
                 target_ip = self.index_to_ip(node)
-                send_large_data_udp(update_request, target_ip, DEFAULT_PORT_NUM)
+                self.send_large_data_udp(update_request, target_ip, DEFAULT_PORT_NUM)
 
             print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
