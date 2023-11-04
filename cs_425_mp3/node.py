@@ -251,9 +251,11 @@ class Server:
             random.shuffle(candidates)  # Shuffle the list in-place
             return candidates[:self.n_send]
     
+    import json
+
     def receive(self):
         """
-        A server's receiver is respnsible to receive all gossip UDP message:
+        A server's receiver is responsible for receiving all gossip UDP messages.
         :return: None
         """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -267,20 +269,36 @@ class Server:
                         if random.random() < self.drop_rate:
                             continue
                         else:
-                            msgs = json.loads(data.decode('utf-8'))2
-                            if ("update_request" in msgs):
+                            try:
+                                # Accumulate the data until a delimiter is found
+                                full_data = b""
+                                while True:
+                                    full_data += data
+                                    data, server = s.recvfrom(4096)
+                                    if 'END_OF_CHUNK' in data:
+                                        break
+
+                                msgs = json.loads(full_data.decode('utf-8'))
+                            except json.JSONDecodeError as json_error:
+                                print(f"Error decoding JSON: {json_error}")
+                                continue  # Skip processing this message
+
+                            if "update_request" in msgs:
                                 self.handle_update_request(msgs)
-                            elif ("get_request" in msgs):
+                            elif "get_request" in msgs:
                                 self.handle_get_request(msgs)
-                            elif ("delete_request" in msgs):
+                            elif "delete_request" in msgs:
                                 self.handle_delete_request(msgs)
-                            elif ("get_response" in msgs):
+                            elif "get_response" in msgs:
                                 self.handle_get_response(msgs)
                             else:
-                                self.update_membership_list(msgs) 
+                                self.update_membership_list(msgs)
                 except Exception as e:
-                    print(e)
+                    print(f"Error while receiving and processing messages: {e}")
 
+                    
+                    
+                    
     def get_original_location(self, file_name):
         # Get hash for file
         hash_obj = hashlib.md5(file_name.encode())
@@ -301,7 +319,9 @@ class Server:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for chunk in chunks:
                 s.sendto(chunk.encode(), (target, port))
-                
+            s.sendto(b'END_OF_CHUNK', (target, port))
+    
+            
     def upload_file(self, local_file_name, sfds_file_name):
         """
         Decide where file and replicas should be stored, then gossip
