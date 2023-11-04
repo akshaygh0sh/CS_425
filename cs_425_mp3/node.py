@@ -289,7 +289,8 @@ class Server:
         ssh_client.connect(target_machine, 22, 'aaghosh2', 'Blackberry!598UIUC')
 
         scp_client = ssh_client.open_sftp()
-        scp_client.put(local_file_name, f"/files/{sdfs_file_name}")
+        if (os.path.isfile(local_file_name)):
+            scp_client.put(local_file_name, f"/files/{sdfs_file_name}")
         scp_client.close()
         ssh_client.close()
 
