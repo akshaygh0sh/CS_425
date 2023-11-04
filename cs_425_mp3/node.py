@@ -271,11 +271,12 @@ class Server:
                             try:
                                 # Accumulate the data until a delimiter is found
                                 full_data = b""
-                                while True:    
+                                while True:
+                                    full_data += data
                                     data, server = s.recvfrom(4096)
                                     if b'END_OF_CHUNK' in data:
+                                        full_data = full_data[:-len('END_OF_CHUNK')]
                                         break
-                                    full_data += data
 
                                 msgs = json.loads(full_data.decode('utf-8'))
                             except json.JSONDecodeError as json_error:
