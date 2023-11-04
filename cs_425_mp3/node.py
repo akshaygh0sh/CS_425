@@ -2,13 +2,14 @@ import socket
 import time
 import threading
 import json
-import sys
+import sys, os
 import random
 import datetime
 import logging
 import argparse
 import hashlib
 import base64
+import paramiko
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -64,9 +65,9 @@ class Server:
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
-        self.failure_time_threshold = 7
-        self.cleanup_time_threshold = 7
-        self.suspect_time_threshold = 7
+        self.failure_time_threshold = 3
+        self.cleanup_time_threshold = 3
+        self.suspect_time_threshold = 3
         self.protocol_period = args.protocol_period
         # Number of times to send messages.
         self.n_send = 3
@@ -105,7 +106,7 @@ class Server:
             for node in self.file_list[remote_file]["locations"]:
                 print(self.index_to_ip(node))
         else:
-            print("File not found in SFDS")
+            print("File not found in SDFS")
     
     def store(self):
         with self.file_list_lock:
@@ -254,7 +255,7 @@ class Server:
 
     def receive(self):
         """
-        A server's receiver is responsible for receiving all gossip UDP messages.
+        A server's receiver is respnsible to receive all gossip UDP message:
         :return: None
         """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -268,38 +269,30 @@ class Server:
                         if random.random() < self.drop_rate:
                             continue
                         else:
-                            try:
-                                # Accumulate the data until a delimiter is found
-                                full_data = b""
-                                while True:
-                                    full_data += data
-                                    data, server = s.recvfrom(4096)
-                                    if b'END_OF_CHUNK' in data:
-                                        full_data = full_data[:-len('END_OF_CHUNK')]
-                                        break
-                                    
-                                #print(full_data)
-                                msgs = json.loads(full_data.decode('utf-8'))
-                            except json.JSONDecodeError as json_error:
-                                print(f"Error decoding JSON: {json_error}")
-                                continue  # Skip processing this message
-
-                            if "update_request" in msgs:
+                            msgs = json.loads(data.decode('utf-8'))
+                            if ("update_request" in msgs):
                                 self.handle_update_request(msgs)
-                            elif "get_request" in msgs:
+                            elif ("get_request" in msgs):
                                 self.handle_get_request(msgs)
-                            elif "delete_request" in msgs:
+                            elif ("delete_request" in msgs):
                                 self.handle_delete_request(msgs)
-                            elif "get_response" in msgs:
+                            elif ("get_response" in msgs):
                                 self.handle_get_response(msgs)
                             else:
-                                self.update_membership_list(msgs)
+                                self.update_membership_list(msgs) 
                 except Exception as e:
-                    print(f"Error while receiving and processing messages: {e}")
+                    print(e)
+    
+    def send_file(self, target_machine, local_file_name, sdfs_file_name):
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(target_machine, 22, 'aaghosh2', 'Blackberry!598UIUC')
 
-                    
-                    
-                    
+        scp_client = ssh_client.open_sftp()
+        scp_client.put(local_file_name, f"/files/{sdfs_file_name}")
+        scp_client.close()
+        ssh_client.close()
+
     def get_original_location(self, file_name):
         # Get hash for file
         hash_obj = hashlib.md5(file_name.encode())
@@ -311,93 +304,39 @@ class Server:
     def get_file_locations(self, file_name):
         original_location = self.get_original_location(file_name)
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
-    def send_large_data_udp(self, data, target, port):
-        MAX_PACKET_SIZE = 65507
-        data_str = json.dumps(data)
-
-        chunks = [data_str[i:i+MAX_PACKET_SIZE] for i in range(0, len(data_str), MAX_PACKET_SIZE)]
-
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            for chunk in chunks:
-                s.sendto(chunk.encode(), (target, port))
-            s.sendto(b'END_OF_CHUNK', (target, port))
-    
             
-    def upload_file(self, local_file_name, sfds_file_name):
+    def upload_file(self, local_file_name, sdfs_file_name):
         """
         Decide where file and replicas should be stored, then gossip
         the dictionary
         """
         with self.file_list_lock:
-            file_locations = self.get_file_locations(sfds_file_name)
-            try:
-                with open(local_file_name, 'rb') as local_file:
-                    file_contents = local_file.read()
-            except (FileNotFoundError, IOError) as e:
-                print(f"Error: Could not open or read the local file '{local_file_name}': {str(e)}")
-                return
-            file_contents = base64.b64encode(file_contents).decode()
-            update_request = {
-                        "update_request" : {
-                            "file_name" : sfds_file_name,
-                            "locations" : file_locations[1:],
-                            "contents" : file_contents
-                        }
-                    }
-            if (sfds_file_name in self.file_list):
-                update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
-            else:
-                self.file_list[sfds_file_name] = {}
-                update_request["version"] = 1
+            file_locations = self.get_file_locations(sdfs_file_name)
 
             # Send update request to necessary nodes
             for node in file_locations:
-                target_ip = self.index_to_ip(node)
-                self.send_large_data_udp(update_request, target_ip, DEFAULT_PORT_NUM)
+                target_machine = self.index_to_ip(node)
+                self.send_file(target_machine, local_file_name, sdfs_file_name)
 
-            print(f"Putting file {sfds_file_name} on machines {file_locations}")
+            print(f"Put file {sdfs_file_name} on machines {file_locations}")
         
     def handle_update_request(self, update_request):
         with self.file_list_lock:
             message_content = update_request["update_request"]
-            sfds_file_name = message_content["file_name"]
-            if (sfds_file_name in self.file_list):
+            sdfs_file_name = message_content["file_name"]
+            if (sdfs_file_name in self.file_list):
                 # More recent version, update
-                if (message_content["version"] > self.file_list[sfds_file_name]["version"]):
-                    self.file_list[sfds_file_name]["version"] = message_content["version"]
-                    self.file_list[sfds_file_name]["contents"] = message_content["contents"]
-                    self.file_list[sfds_file_name]["locations"] = message_content["locations"]
+                if (message_content["version"] > self.file_list[sdfs_file_name]["version"]):
+                    self.file_list[sdfs_file_name]["version"] = message_content["version"]
+                    self.file_list[sdfs_file_name]["contents"] = message_content["contents"]
+                    self.file_list[sdfs_file_name]["locations"] = message_content["locations"]
             # First time updating
             else:
-                self.file_list[sfds_file_name] = {}
-                self.file_list[sfds_file_name]["version"] = 1
-                self.file_list[sfds_file_name]["contents"] = message_content["contents"]
-                self.file_list[sfds_file_name]["locations"] = message_content["locations"]
-            print("After update request", self.file_list)
-
-    def handle_get_request(self, get_message):
-        with self.file_list_lock:
-            sfds_file_name = get_message["get_request"]["file_name"]
-            target_node = get_message["get_request"]["from"]
-            if (sfds_file_name in self.file_list):
-                get_response = {
-                    "get_response" : {
-                        "file_name" : sfds_file_name,
-                        "contents" : self.file_list[sfds_file_name]["contents"],
-                        "status" : "success"
-                    }
-                }
-            else:
-                get_response = {
-                    "get_response" : {
-                        "file_name" : sfds_file_name,
-                        "status" : "failure"
-                    }
-                }
-
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
-                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+                self.file_list[sdfs_file_name] = {}
+                self.file_list[sdfs_file_name]["version"] = 1
+                self.file_list[sdfs_file_name]["contents"] = message_content["contents"]
+                self.file_list[sdfs_file_name]["locations"] = message_content["locations"]
+            print("After update request", self.file_list)  
     
     def send_delete_request(self, filename):
         file_location = self.get_file_locations(filename)
@@ -410,36 +349,32 @@ class Server:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
                 s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
-                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(location), DEFAULT_PORT_NUM))
     
 
     def handle_delete_request(self, delete_message):
         #to do
         with self.file_list_lock:
-            sfds_file_name = delete_message["delete_request"]["file_name"]
+            sdfs_file_name = delete_message["delete_request"]["file_name"]
             target_node = delete_message["delete_request"]["from"]
-            if (sfds_file_name in self.file_list):
-                del self.file_list[sfds_file_name] # is this legal?
-                delete_response = {
-                    "delete_response" : {
-                        "file_name" : sfds_file_name,
-                        "status" : "success",
-                        "from" : target_node
-                    }
+            delete_response = {
+                "delete_response" : {
+                    "file_name" : sdfs_file_name,
+                    "status" : "success",
+                    "from" : self.index_to_ip(self.current_machine_ix)
                 }
+            }
+
+            if os.path.exists(f"/files/{sdfs_file_name}"):
+                try:
+                    # Delete the file
+                    os.remove(sdfs_file_name)
+                except OSError as e:
+                    delete_response["delete_response"]["status"] = "failure"
             else:
-                delete_response = {
-                    "delete_response" : {
-                        "file_name" : sfds_file_name,
-                        "status" : "failure",
-                        "from" : target_node
-                    }
-                }
+                delete_response["delete_response"]["status"] = "failure"
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
-                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
-
 
                 
     def handle_delete_response(self, message):
@@ -447,31 +382,44 @@ class Server:
         file_name = delete_response["file_name"]
         delete_from = delete_response["from"]
         if delete_response["status"] == "success":
-            print(f"DELETE request succeeded: deleleted {file_name}, from {delete_from}")
+            print(f"DELETE request succeeded: deleted {file_name}, from {delete_from}")
         else:
             print(f"Error when attempting to deleting contents of {file_name}, from {delete_from}")
 
     
-        
-    def send_get_request(self, sfds_file_name):
-        file_location = self.get_file_locations(sfds_file_name)
+    def send_get_request(self, sdfs_file_name):
+        file_location = self.get_file_locations(sdfs_file_name)
         get_request = {
             "get_request" : {
-                "file_name" : sfds_file_name,
+                "file_name" : sdfs_file_name,
                 "from" : self.current_machine_ix
             }
         }
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM))
-            s.sendto(b'END_OF_CHUNK',  (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM)) 
-        
+    
+    def handle_get_request(self, get_message):
+        with self.file_list_lock:
+            sdfs_file_name = get_message["get_request"]["file_name"]
+            target_node = get_message["get_request"]["from"]
+            get_response = {
+                    "get_response" : {
+                        "file_name" : sdfs_file_name,
+                        "status" : "success"
+                    }
+                }
+            if (os.path.exists(f"/files/{sdfs_file_name}")):
+                self.send_file(target_node, f"/files/{sdfs_file_name}", sdfs_file_name)
+            else:
+                get_response["get_response"]["status"] = "failure"
+
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))  
+    
     def handle_get_response(self, message):
         get_response = message["get_response"]
         file_name = get_response["file_name"]
         if get_response["status"] == "success":
-            file_contents = get_response["contents"]
-            with open(file_name, "w") as file:
-                file.write(file_contents)
             print(f"GET request succeeded: received contents of {file_name}")
         else:
             print(f"Error when attempting to fetch contents of {file_name}")
@@ -547,7 +495,6 @@ class Server:
                         for peer in peers:
                             send_msg = self.json() if message is None else message
                             s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
-                            s.sendto(b'END_OF_CHUNK',  tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print(e)
