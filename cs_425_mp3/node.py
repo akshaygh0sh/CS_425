@@ -300,7 +300,7 @@ class Server:
         with self.file_list_lock:
             file_locations = self.get_file_locations(sfds_file_name)
             try:
-                with open(local_file_name, 'r') as local_file:
+                with open(local_file_name, 'rb') as local_file:
                     file_contents = local_file.read()
             except (FileNotFoundError, IOError) as e:
                 print(f"Error: Could not open or read the local file '{local_file_name}': {str(e)}")
