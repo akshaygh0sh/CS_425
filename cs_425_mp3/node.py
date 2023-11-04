@@ -10,7 +10,6 @@ import argparse
 import hashlib
 import base64
 import paramiko
-import getpass
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -436,7 +435,7 @@ class Server:
         :param enable_sending: True to enable sending, False to disable sending.
         """
         self.username = input("What is your username: ")
-        self.password = getpass.getpass("What is your password: ")
+        self.password = input("What is your password: ")
         while True:
             user_input = input("Enter command: (or 'exit' to terminate): ")
             if user_input == 'join':
