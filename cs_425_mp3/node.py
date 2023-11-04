@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import base64
 import paramiko
+import getpass
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -286,7 +287,7 @@ class Server:
     def send_file(self, target_machine, local_file_path, sdfs_file_path):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(target_machine, 22, 'aaghosh2', 'Blackberry!598UIUC')
+        ssh_client.connect(target_machine, 22, self.username, self.password)
 
         scp_client = ssh_client.open_sftp()
         if (os.path.isfile(local_file_path)):
@@ -313,8 +314,8 @@ class Server:
         """
         with self.file_list_lock:
             file_locations = self.get_file_locations(sdfs_file_name)
-            local_file_path = f"./CS_425/cs_425_mp3/{local_file_name}"
-            sdfs_file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
+            sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
@@ -322,7 +323,7 @@ class Server:
 
             print(f"Put file {sdfs_file_name} on machines {file_locations}")
     
-    def handle_update_request(self, update_request): 
+    def handle_update_request(self, update_request):
         with self.file_list_lock:
             message_content = update_request["update_request"]
             sdfs_file_name = message_content["file_name"]
@@ -365,7 +366,7 @@ class Server:
                     "from" : self.index_to_ip(self.current_machine_ix)
                 }
             }
-            file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             if os.path.exists(file_path):
                 try:
                     # Delete the file
@@ -410,8 +411,8 @@ class Server:
                         "status" : "success"
                     }
                 }
-            file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
-            local_dir = f"./CS_425/cs_425_mp3/{sdfs_file_name}"
+            file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            local_dir = f"/home/{self.username}/CS_425/cs_425_mp3/{sdfs_file_name}"
             if (os.path.exists(file_path)):
                 self.send_file(self.index_to_ip(target_node), file_path, local_dir)
             else:
@@ -434,6 +435,8 @@ class Server:
         Toggle the sending process on or off.
         :param enable_sending: True to enable sending, False to disable sending.
         """
+        self.username = input("What is your username: ")
+        self.password = getpass.getpass("What is your password: ")
         while True:
             user_input = input("Enter command: (or 'exit' to terminate): ")
             if user_input == 'join':
