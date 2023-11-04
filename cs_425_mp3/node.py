@@ -267,7 +267,7 @@ class Server:
                         if random.random() < self.drop_rate:
                             continue
                         else:
-                            msgs = json.loads(data.decode('utf-8'))
+                            msgs = json.loads(data.decode('utf-8'))2
                             if ("update_request" in msgs):
                                 self.handle_update_request(msgs)
                             elif ("get_request" in msgs):
