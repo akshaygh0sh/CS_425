@@ -292,7 +292,16 @@ class Server:
     def get_file_locations(self, file_name):
         original_location = self.get_original_location(file_name)
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
+    def send_large_data_udp(data, target, port):
+        MAX_PACKET_SIZE = 65507
+        data_str = json.dumps(data)
 
+        chunks = [data_str[i:i+MAX_PACKET_SIZE] for i in range(0, len(data_str), MAX_PACKET_SIZE)]
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            for chunk in chunks:
+                s.sendto(chunk.encode(), (target, port))
+                
     def upload_file(self, local_file_name, sfds_file_name):
         """
         Decide where file and replicas should be stored, then gossip
@@ -321,9 +330,9 @@ class Server:
                 update_request["version"] = 1
 
             # Send update request to necessary nodes
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                for node in file_locations:
-                    s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
+            for node in file_locations:
+                target_ip = self.index_to_ip(node)
+                send_large_data_udp(update_request, target_ip, DEFAULT_PORT_NUM)
 
             print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
