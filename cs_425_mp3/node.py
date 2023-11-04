@@ -313,8 +313,8 @@ class Server:
         """
         with self.file_list_lock:
             file_locations = self.get_file_locations(sdfs_file_name)
-            local_file_path = f"/cs_425_mp3/{local_file_name}"
-            sdfs_file_path = f"/cs_425_mp3/files/{sdfs_file_name}"
+            local_file_path = f"./CS_425/cs_425_mp3/{local_file_name}"
+            sdfs_file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
@@ -322,7 +322,7 @@ class Server:
 
             print(f"Put file {sdfs_file_name} on machines {file_locations}")
     
-    def handle_update_request(self, update_request):
+    def handle_update_request(self, update_request): 
         with self.file_list_lock:
             message_content = update_request["update_request"]
             sdfs_file_name = message_content["file_name"]
@@ -365,7 +365,7 @@ class Server:
                     "from" : self.index_to_ip(self.current_machine_ix)
                 }
             }
-            file_path = f"/cs_425_mp3/files/{sdfs_file_name}"
+            file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
             if os.path.exists(file_path):
                 try:
                     # Delete the file
@@ -410,8 +410,8 @@ class Server:
                         "status" : "success"
                     }
                 }
-            file_path = f"/cs_425_mp3/files/{sdfs_file_name}"
-            local_dir = f"/cs_425_mp3/{sdfs_file_name}"
+            file_path = f"./CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            local_dir = f"./CS_425/cs_425_mp3/{sdfs_file_name}"
             if (os.path.exists(file_path)):
                 self.send_file(self.index_to_ip(target_node), file_path, local_dir)
             else:
