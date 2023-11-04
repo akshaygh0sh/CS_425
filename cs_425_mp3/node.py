@@ -290,7 +290,7 @@ class Server:
 
         scp_client = ssh_client.open_sftp()
         if (os.path.isfile(local_file_name)):
-            scp_client.put(local_file_name, f"/files/{sdfs_file_name}")
+            scp_client.put(local_file_name, f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}")
         scp_client.close()
         ssh_client.close()
 
