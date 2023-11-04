@@ -397,6 +397,7 @@ class Server:
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))    
+                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
     
     def send_delete_request(self, filename):
         file_location = self.get_file_locations(filename)
@@ -409,6 +410,7 @@ class Server:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
                 s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(location), DEFAULT_PORT_NUM))
     
 
     def handle_delete_request(self, delete_message):
@@ -436,6 +438,7 @@ class Server:
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+                s.sendto(b'END_OF_CHUNK', (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
 
 
                 
@@ -459,7 +462,8 @@ class Server:
             }
         }
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM))    
+            s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM))
+            s.sendto(b'END_OF_CHUNK',  (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM)) 
         
     def handle_get_response(self, message):
         get_response = message["get_response"]
@@ -543,6 +547,7 @@ class Server:
                         for peer in peers:
                             send_msg = self.json() if message is None else message
                             s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
+                            s.sendto(b'END_OF_CHUNK',  tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print(e)
