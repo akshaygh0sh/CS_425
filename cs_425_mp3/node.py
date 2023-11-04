@@ -418,6 +418,7 @@ class Server:
             else:
                 get_response["get_response"]["status"] = "failure"
 
+            print("Test does it get here")
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))  
     
