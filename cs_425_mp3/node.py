@@ -8,6 +8,7 @@ import datetime
 import logging
 import argparse
 import hashlib
+import base64
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -305,7 +306,7 @@ class Server:
             except (FileNotFoundError, IOError) as e:
                 print(f"Error: Could not open or read the local file '{local_file_name}': {str(e)}")
                 return
-
+            file_contents = base64.b64encode(file_contents).decode()
             update_request = {
                         "update_request" : {
                             "file_name" : sfds_file_name,
