@@ -251,7 +251,6 @@ class Server:
             random.shuffle(candidates)  # Shuffle the list in-place
             return candidates[:self.n_send]
     
-    import json
 
     def receive(self):
         """
@@ -275,7 +274,7 @@ class Server:
                                 while True:
                                     full_data += data
                                     data, server = s.recvfrom(4096)
-                                    if 'END_OF_CHUNK' in data:
+                                    if b'END_OF_CHUNK' in data:
                                         break
 
                                 msgs = json.loads(full_data.decode('utf-8'))
