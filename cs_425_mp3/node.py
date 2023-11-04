@@ -283,14 +283,14 @@ class Server:
                 except Exception as e:
                     print(e)
     
-    def send_file(self, target_machine, local_file_name, sdfs_file_name):
+    def send_file(self, target_machine, local_file_path, sdfs_file_path):
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(target_machine, 22, 'aaghosh2', 'Blackberry!598UIUC')
 
         scp_client = ssh_client.open_sftp()
-        if (os.path.isfile(local_file_name)):
-            scp_client.put(local_file_name, f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}")
+        if (os.path.isfile(local_file_path)):
+            scp_client.put(local_file_path, sdfs_file_path)
         scp_client.close()
         ssh_client.close()
 
@@ -313,14 +313,15 @@ class Server:
         """
         with self.file_list_lock:
             file_locations = self.get_file_locations(sdfs_file_name)
-
+            local_file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/{local_file_name}"
+            sdfs_file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
-                self.send_file(target_machine, local_file_name, sdfs_file_name)
+                self.send_file(target_machine, local_file_path, sdfs_file_path)
 
             print(f"Put file {sdfs_file_name} on machines {file_locations}")
-        
+    
     def handle_update_request(self, update_request):
         with self.file_list_lock:
             message_content = update_request["update_request"]
@@ -364,11 +365,11 @@ class Server:
                     "from" : self.index_to_ip(self.current_machine_ix)
                 }
             }
-
-            if os.path.exists(f"/files/{sdfs_file_name}"):
+            file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            if os.path.exists(file_path):
                 try:
                     # Delete the file
-                    os.remove(sdfs_file_name)
+                    os.remove(file_path)
                 except OSError as e:
                     delete_response["delete_response"]["status"] = "failure"
             else:
@@ -409,8 +410,10 @@ class Server:
                         "status" : "success"
                     }
                 }
-            if (os.path.exists(f"/files/{sdfs_file_name}")):
-                self.send_file(target_node, f"/files/{sdfs_file_name}", sdfs_file_name)
+            file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}"
+            local_dir = f"/home/aaghosh2/CS_425/cs_425_mp3/"
+            if (os.path.exists(file_path)):
+                self.send_file(target_node, file_path, local_dir)
             else:
                 get_response["get_response"]["status"] = "failure"
 
