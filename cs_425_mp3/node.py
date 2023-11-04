@@ -413,6 +413,7 @@ class Server:
             file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             local_dir = f"/home/aaghosh2/CS_425/cs_425_mp3/"
             if (os.path.exists(file_path)):
+                print("Satisfying get request")
                 self.send_file(target_node, file_path, local_dir)
             else:
                 get_response["get_response"]["status"] = "failure"
