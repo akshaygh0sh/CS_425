@@ -413,9 +413,7 @@ class Server:
             file_path = f"/home/aaghosh2/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             local_dir = f"/home/aaghosh2/CS_425/cs_425_mp3/{sdfs_file_name}"
             if (os.path.exists(file_path)):
-                print("Before")
-                self.send_file(target_node, file_path, local_dir)
-                print("After")
+                self.send_file(self.index_to_ip(target_node), file_path, local_dir)
             else:
                 get_response["get_response"]["status"] = "failure"
 
