@@ -278,7 +278,7 @@ class Server:
                                         full_data = full_data[:-len('END_OF_CHUNK')]
                                         break
                                     
-                                print(full_data)
+                                #print(full_data)
                                 msgs = json.loads(full_data.decode('utf-8'))
                             except json.JSONDecodeError as json_error:
                                 print(f"Error decoding JSON: {json_error}")
