@@ -299,25 +299,30 @@ class Server:
         """
         with self.file_list_lock:
             file_locations = self.get_file_locations(sfds_file_name)
-            with open(local_file_name, 'r') as local_file:
-                file_contents = local_file.read()
-                update_request = {
-                            "update_request" : {
-                                "file_name" : sfds_file_name,
-                                "locations" : file_locations[1:],
-                                "contents" : file_contents
-                            }
-                        }
-                if (sfds_file_name in self.file_list):
-                    update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
-                else:
-                    self.file_list[sfds_file_name] = {}
-                    update_request["version"] = 1
+            try:
+                with open(local_file_name, 'r') as local_file:
+                    file_contents = local_file.read()
+            except (FileNotFoundError, IOError) as e:
+                print(f"Error: Could not open or read the local file '{local_file_name}': {str(e)}")
+                return
 
-                # Send update request to necessary nodes
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                    for node in file_locations:
-                        s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
+            update_request = {
+                        "update_request" : {
+                            "file_name" : sfds_file_name,
+                            "locations" : file_locations[1:],
+                            "contents" : file_contents
+                        }
+                    }
+            if (sfds_file_name in self.file_list):
+                update_request["version"] = self.file_list[sfds_file_name]["version"] + 1
+            else:
+                self.file_list[sfds_file_name] = {}
+                update_request["version"] = 1
+
+            # Send update request to necessary nodes
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                for node in file_locations:
+                    s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(node), DEFAULT_PORT_NUM))
 
             print(f"Putting file {sfds_file_name} on machines {file_locations}")
         
