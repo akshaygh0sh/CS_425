@@ -85,7 +85,7 @@ class Server:
         self.enable_sending = True
         self.gossipS = False
         # Queue to keep track of nodes that are writing
-        self.write_queue = queue.Queue()
+        self.write_queue = queue.Queue(maxsize = 1)
 
     def get_info(self):
         try:
@@ -452,11 +452,12 @@ class Server:
                     "from" : self.current_machine_ix
                 }
             }
+            print("Before", self.write_queue.queue)
             # If something is still writing, don't allow node to write
             while True:
                 if (self.write_queue.empty()):
                     break
-            
+            print("After", self.write_queue.queue)
             self.write_queue.put({
                 "file_name" : sdfs_file_name,
                 "from" : node_from
