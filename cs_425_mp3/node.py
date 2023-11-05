@@ -539,7 +539,7 @@ class Server:
                 self.print_id()
             elif user_input.startswith('put'):
                 info = user_input.split(sep = ' ')
-                self.send_update_request(info[2])
+                self.send_update_request(info[1], info[2])
             elif user_input.startswith('get'):
                 info = user_input.split(sep = ' ')
                 self.send_get_request(info[1])
