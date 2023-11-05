@@ -471,7 +471,7 @@ class Server:
             message_content = update_finish["update_finish"]
             file_name = message_content["file_name"]
             node_from = message_content["from"]
-            with self.writin_lock:
+            with self.writing_lock:
                 self.writing_enabled = True
             print("Writing now enabled")
 
