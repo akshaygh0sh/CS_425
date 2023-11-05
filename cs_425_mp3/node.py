@@ -380,6 +380,7 @@ class Server:
 
     def handle_update_request(self, update_request):
         with self.file_list_lock:
+            print("Received update request")
             message_content = update_request["update_request"]
             sdfs_file_name = message_content["file_name"]
             local_file_name = message_content["local_file_name"]
@@ -398,6 +399,7 @@ class Server:
     
     def handle_update_response(self, update_response):
         with self.file_list_lock:
+            print("Received update response")
             message_content = update_response["update_response"]
             sdfs_file_name = message_content["file_name"]
             local_file_name = message_content["local_file_name"]
