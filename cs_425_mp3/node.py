@@ -439,7 +439,8 @@ class Server:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
     def print_writing_flag(self):
-        print(self.writing_enabled)
+        print(self.write_queue.queue)
+        print(self.write_queue.empty())
 
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
