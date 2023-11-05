@@ -324,6 +324,7 @@ class Server:
                     print("exception ", e)
     
     def send_file(self, target_machine, local_file_path, sdfs_file_path):
+        print("Start send")
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(target_machine, 22, self.username, self.password)
@@ -333,6 +334,7 @@ class Server:
             scp_client.put(local_file_path, sdfs_file_path)
         scp_client.close()
         ssh_client.close()
+        print("End send")
 
     def get_original_location(self, file_name):
         # Get hash for file
