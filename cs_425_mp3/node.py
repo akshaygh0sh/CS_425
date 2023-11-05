@@ -10,7 +10,6 @@ import argparse
 import hashlib
 import base64
 import paramiko
-import queue
 
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
@@ -84,8 +83,9 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
-        # Queue to keep track of nodes that are writing
-        self.write_queue = queue.Queue(maxsize = 1)
+        # To keep track of when writing is enabled
+        self.writing_enabled = True
+        self.writing_lock = threading.Lock()
 
     def get_info(self):
         try:
@@ -438,8 +438,8 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
-    def print_queue(self):
-        print(self.write_queue.queue)
+    def print_writing_flag(self):
+        print(self.writing_enabled)
 
     def handle_update_request(self, update_request):
         with self.file_list_lock:
@@ -457,13 +457,11 @@ class Server:
             }
             # If something is still writing, don't allow node to write
             while True:
-                if (self.write_queue.empty()):
+                if (self.writing_enabled):
                     break
 
-            self.write_queue.put({
-                "file_name" : sdfs_file_name,
-                "from" : node_from
-            })
+            with self.writing_lock:
+                self.writing_enabled = False
             # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
@@ -474,11 +472,9 @@ class Server:
             file_name = message_content["file_name"]
             node_from = message_content["from"]
             queue_copy = list(self.write_queue.queue)
-            # Empty queue
-            if (len(queue_copy) > 0):
-                if (queue_copy[0]["file_name"] == file_name and queue_copy[0]["from"] == node_from):
-                    top = self.write_queue.get()
-            print("Removed from queue, now:", self.write_queue.queue)
+            with self.writin_lock:
+                self.writing_enabled = True
+            print("Writing now enabled")
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
@@ -633,8 +629,8 @@ class Server:
                 self.ls_files(info[1])
             elif user_input == 'store':
                 self.store()
-            elif user_input == 'print_queue':
-                self.print_queue()
+            elif user_input == 'write_status':
+                self.print_writing_flag()
             elif user_input.lower() == 'exit':
                 break
             else:
