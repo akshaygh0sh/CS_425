@@ -151,7 +151,7 @@ class Server:
                                 if self.membership_list[member_id]["status"] == "Suspect":
                                     logger.info("[SUS]    - {}".format(member_id))
                                     log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                                    print(log_message)
+                                    print("log message is ", log_message)
                             # Update only if the received heartbeat is greater and both at the same incarnation
                             elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
                                 self.membership_list[member_id] = member_info
@@ -164,7 +164,7 @@ class Server:
                             if self.membership_list[member_id]["status"] == "Suspect":
                                 logger.info("[SUS]    - {}".format(member_id))
                                 log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                                print(log_message)
+                                print("log message is ",  log_message)
                             logger.info("[JOIN]   - {}".format(member_id))
             elif "file_info" in data_list:
                 with self.file_list_lock:
@@ -201,7 +201,7 @@ class Server:
                 self.membership_list[member_id]["time"] = now
                 logger.info("[SUS]    - {}".format(member_id))
                 log_message = f"Detected      : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                print(log_message)
+                print("log message is ", log_message)
             fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < suspect_threshold_time and member_id not in self.failed_nodes and member_info['status'] == "Suspect"]
             for member_id in fail_members_detected:
                 self.failed_nodes[member_id] = now
@@ -324,7 +324,7 @@ class Server:
                             else:
                                 self.update_lists(msgs) 
                 except Exception as e:
-                    print(e)
+                    print("exception ", e)
     
     def send_file(self, target_machine, local_file_path, sdfs_file_path):
         ssh_client = paramiko.SSHClient()
@@ -480,7 +480,7 @@ class Server:
         
         
         with self.file_list_lock:
-            print(self.file_info)
+            print("the info list is ", self.file_info)
     def user_input(self):
         """
         Toggle the sending process on or off.
@@ -564,7 +564,7 @@ class Server:
                             s.sendto(json.dumps(file_info).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
-                    print(e)
+                    print("the exception is", e)
                     
     def update_heartbeat(self):
         # Method to update the server's heartbeat and refresh its status in the membership list.
