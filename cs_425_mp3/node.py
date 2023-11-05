@@ -180,18 +180,19 @@ class Server:
                     
                     for file_key in data_list:
                         print("file info datalist is", data_list)
+                        print(type(data_list[file_key]['heartbeat']))
+                        print(type(self.file_info[file_key]['hearbeat']))
                         if file_key not in self.file_info:
-                            print("1")
+                            #print("1")
                             self.file_info[file_key] = data_list[file_key]
-                            print("2")
-                        print("3")
+                            #print("2")
                         
-                        if data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']:
-                            print("4")
+                        elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']: #this statment fails
+                            #print("4")
                             self.file_info[file_key]['hearbeat'] = data_list[file_key]['heartbeat']
-                            print("5")
+                            #print("5")
                             self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
-                            print("6")
+                            #print("6")
                             
                 
 
