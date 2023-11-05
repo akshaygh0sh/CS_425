@@ -475,7 +475,11 @@ class Server:
         else:
             print(f"Error when attempting to fetch contents of {file_name}")
     
-
+    def print_file_info(self):
+        
+        
+        with self.file_list_lock:
+            print(self.file_info)
     def user_input(self):
         """
         Toggle the sending process on or off.
@@ -510,6 +514,9 @@ class Server:
                 print("Stopping gossip S.")
             elif user_input == 'list_mem':
                 print(self.print_membership_list())
+            
+            elif user_input == 'list_file':    
+                print(self.print_file_info())
             elif user_input == 'list_self':
                 self.print_id()
             elif user_input.startswith('put'):
@@ -526,8 +533,6 @@ class Server:
                 self.ls_files(info[1])
             elif user_input == 'store':
                 self.store()
-            elif user_input == 'file_list':
-                print(self.file_list)
             elif user_input.lower() == 'exit':
                 break
             else:
