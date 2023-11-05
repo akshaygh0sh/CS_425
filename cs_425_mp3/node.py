@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import base64
 import paramiko
+import queue
 
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
@@ -83,6 +84,8 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
+        # Queue to keep track of nodes that are writing
+        self.write_queue = queue.Queue()
 
     def get_info(self):
         try:
@@ -355,6 +358,8 @@ class Server:
                                 self.handle_update_request(msgs)
                             elif ("update_response" in msgs):
                                 self.handle_update_response(msgs)
+                            elif ("update_finish" in msgs):
+                                self.handle_update_finish(msgs)
                             elif ("get_request" in msgs):
                                 self.handle_get_request(msgs)
                             elif ("get_response" in msgs):
@@ -378,6 +383,17 @@ class Server:
             scp_client.put(local_file_path, sdfs_file_path)
         scp_client.close()
         ssh_client.close()
+
+        sdfs_file_name = sdfs_file_name.split('/')[-1]
+        update_finish = {
+            "update_finish" : {
+                "file_name" : sdfs_file_name,
+                "from" : self.current_machine_ix
+            }
+        }
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(json.dumps(update_finish).encode(), (target_machine, DEFAULT_PORT_NUM))
+
 
     def get_original_location(self, file_name):
         # Get hash for file
@@ -436,10 +452,30 @@ class Server:
                     "from" : self.current_machine_ix
                 }
             }
-            # Check queue later here
+            # If something is still writing, don't allow node to write
+            while True:
+                if (self.write_queue.empty()):
+                    break
+            
+            self.write_queue.put({
+                "file_name" : sdfs_file_name,
+                "from" : node_from
+            })
+            # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
     
+    def handle_update_finish(self, update_finish):
+        with self.file_list_lock:
+            message_content = update_finish["update_finish"]
+            file_name = message_content["file_name"]
+            node_from = message_content["from"]
+            queue_copy = list(self.write_queue.queue)
+            # Empty queue
+            if (len(queue_copy) > 0):
+                if (queue_copy[0]["file_name"] == file_name and queue_copy[0]["from"] == node_from):
+                    top = self.write_queue.get()
+
     def handle_update_response(self, update_response):
         with self.file_list_lock:
             message_content = update_response["update_response"]
