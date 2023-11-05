@@ -67,9 +67,9 @@ class Server:
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
-        self.failure_time_threshold = 3
-        self.cleanup_time_threshold = 3
-        self.suspect_time_threshold = 3
+        self.failure_time_threshold = 5
+        self.cleanup_time_threshold = 5
+        self.suspect_time_threshold = 5
         self.protocol_period = args.protocol_period
         # Number of times to send messages.
         self.n_send = 3
@@ -578,7 +578,7 @@ class Server:
 
     def user_input(self):
         """
-        Toggle the sending process on or off.
+        Toggle the sending process on or off
         :param enable_sending: True to enable sending, False to disable sending.
         """
         self.username = input("What is your username: ")
