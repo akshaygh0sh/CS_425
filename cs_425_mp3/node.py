@@ -63,7 +63,6 @@ class Server:
             for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
         }
         self.file_info = {}
-        self.file_list = {}
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
@@ -104,8 +103,8 @@ class Server:
         return f"fa23-cs425-56{index}.cs.illinois.edu"
 
     def ls_files(self, remote_file):
-        if (remote_file in self.file_list):
-            for node in self.file_list[remote_file]["locations"]:
+        if (remote_file in self.file_info):
+            for node in self.file_info[remote_file]["locations"]:
                 print(self.index_to_ip(node))
         else:
             print("File not found in SDFS")
@@ -113,82 +112,77 @@ class Server:
     def store(self):
         with self.file_list_lock:
             stored_files = []
-            for key in self.file_list:
-                if (self.current_machine_ix in self.file_list[key]["locations"]):
+            for key in self.file_info:
+                if (self.current_machine_ix in self.file_info[key]["locations"]):
                     stored_files.append(key)
             for file in stored_files:
                 print(f"{file} stored at machine {self.current_machine_ix}")
 
     def update_lists(self, data_list):
         # Method to update the membership list of the server with received information.
-            # Iterate through the received membership list.
-            
-            if "membership_list" in data_list:
-                with self.membership_lock:
-                    data_list = data_list["membership_list"]
-                    for member_id, member_info in data_list.items():
-                        if member_info['heartbeat'] == 0:
-                            # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
-                            continue
-                        if member_id in self.failed_nodes:
-                            # Skip members that are already in the failed members list.
-                            continue
+        # Iterate through the received membership list.
+        if "membership_list" in data_list:
+            with self.membership_lock:
+                data_list = data_list["membership_list"]
+                for member_id, member_info in data_list.items():
+                    if member_info['heartbeat'] == 0:
+                        # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
+                        continue
+                    if member_id in self.failed_nodes:
+                        # Skip members that are already in the failed members list.
+                        continue
 
-                        member_info.setdefault("status", "Alive")
-                        member_info.setdefault("incarnation", 0)
-                        #if the server receive the suspect message about itself, overwrite the message with great incarnation number:
-                        if member_id == self.id:
-                            if member_info["status"] == "Suspect":
-                                if self.incarnation < member_info["incarnation"]:
-                                    self.incarnation = member_info["incarnation"] + 1
-                        # Check if the member is already in the MembershipList
-                        if member_id in self.membership_list:
-                            current_heartbeat = self.membership_list[member_id]["heartbeat"]
-                            # Incarnation overwrite heartbeat
-                            if member_info["incarnation"] > self.membership_list[member_id]["incarnation"]:
-                                self.membership_list[member_id] = member_info
-                                self.membership_list[member_id]["time"] = time.time()
-                                #if suspect print out
-                                if self.membership_list[member_id]["status"] == "Suspect":
-                                    logger.info("[SUS]    - {}".format(member_id))
-                                    log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                                    print("log message is ", log_message)
-                            # Update only if the received heartbeat is greater and both at the same incarnation
-                            elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
-                                self.membership_list[member_id] = member_info
-                                self.membership_list[member_id]["time"] = time.time()
-                        else:
-                            # If the member is not in the MembershipList, add it
+                    member_info.setdefault("status", "Alive")
+                    member_info.setdefault("incarnation", 0)
+                    #if the server receive the suspect message about itself, overwrite the message with great incarnation number:
+                    if member_id == self.id:
+                        if member_info["status"] == "Suspect":
+                            if self.incarnation < member_info["incarnation"]:
+                                self.incarnation = member_info["incarnation"] + 1
+                    # Check if the member is already in the MembershipList
+                    if member_id in self.membership_list:
+                        current_heartbeat = self.membership_list[member_id]["heartbeat"]
+                        # Incarnation overwrite heartbeat
+                        if member_info["incarnation"] > self.membership_list[member_id]["incarnation"]:
                             self.membership_list[member_id] = member_info
                             self.membership_list[member_id]["time"] = time.time()
-                            # If suspect print out 
+                            #if suspect print out
                             if self.membership_list[member_id]["status"] == "Suspect":
                                 logger.info("[SUS]    - {}".format(member_id))
-                                log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                                print("log message is ",  log_message)
-                            logger.info("[JOIN]   - {}".format(member_id))
-            elif "file_info" in data_list:
-                
-                with self.file_list_lock:
-                    data_list = data_list["file_info"]
-                    # Check each value in the file_info list, if the incoming heartbeat
-                    # value is greater than the local heartbeat value for that file,
-                    # update the local heartbeat file value and change the local locations
-                    # to the incoming locations
-                    # IF there aren't enough locations (which means we lost a replica),
-                    # then we should just add the next available node (if we lost 3, we add 4, etc)
-                    
-                    for file_key in data_list:
-                        try:
-                            if file_key not in self.file_info:
-                                self.file_info[file_key] = data_list[file_key]                         
-                            elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['heartbeat']: #this statment fails
-                                self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
-                                self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
-                        except Exception as e:
-                            print("Error when updating file info:", e)
-                            
-                
+                                log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
+                                print("log message is ", log_message)
+                        # Update only if the received heartbeat is greater and both at the same incarnation
+                        elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
+                            self.membership_list[member_id] = member_info
+                            self.membership_list[member_id]["time"] = time.time()
+                    else:
+                        # If the member is not in the MembershipList, add it
+                        self.membership_list[member_id] = member_info
+                        self.membership_list[member_id]["time"] = time.time()
+                        # If suspect print out 
+                        if self.membership_list[member_id]["status"] == "Suspect":
+                            logger.info("[SUS]    - {}".format(member_id))
+                            log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
+                            print("log message is ",  log_message)
+                        logger.info("[JOIN]   - {}".format(member_id))
+        elif "file_info" in data_list:
+            with self.file_list_lock:
+                data_list = data_list["file_info"]
+                # Check each value in the file_info list, if the incoming heartbeat
+                # value is greater than the local heartbeat value for that file,
+                # update the local heartbeat file value and change the local locations
+                # to the incoming locations
+                # IF there aren't enough locations (which means we lost a replica),
+                # then we should just add the next available node (if we lost 3, we add 4, etc)
+                for file_key in data_list:
+                    try:
+                        if file_key not in self.file_info:
+                            self.file_info[file_key] = data_list[file_key]                         
+                        elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['heartbeat']:
+                            self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
+                            self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
+                    except Exception as e:
+                        print("Error when updating file info:", e)
 
     def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
@@ -259,11 +253,7 @@ class Server:
                     }
                     for m in self.membership_list.values()
                 }, self.file_info
-    # def list_json(self):
-    #     with self.membership_lock:
-    #         retur
-        
-        
+          
     def ip_to_machine_id(self, ip):
         ip = ip.split(':')[0]
         ip_to_machine_id = {
@@ -298,7 +288,6 @@ class Server:
             candidates = list(self.membership_list.keys())
             random.shuffle(candidates)  # Shuffle the list in-place
             return candidates[:self.n_send]
-    
 
     def receive(self):
         """
@@ -319,12 +308,16 @@ class Server:
                             msgs = json.loads(data.decode('utf-8'))
                             if ("update_request" in msgs):
                                 self.handle_update_request(msgs)
+                            elif ("update_response" in msgs):
+                                self.handle_update_response(msgs)
                             elif ("get_request" in msgs):
                                 self.handle_get_request(msgs)
-                            elif ("delete_request" in msgs):
-                                self.handle_delete_request(msgs)
                             elif ("get_response" in msgs):
                                 self.handle_get_response(msgs)
+                            elif ("delete_request" in msgs):
+                                self.handle_delete_request(msgs)
+                            elif ("delete_response" in msgs):
+                                self.handle_delete_response(msgs)
                             else:
                                 self.update_lists(msgs) 
                 except Exception as e:
@@ -353,7 +346,7 @@ class Server:
         original_location = self.get_original_location(file_name)
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
             
-    def upload_file(self, local_file_name, sdfs_file_name):
+    def upload_file(self, target_machine_ix, local_file_name, sdfs_file_name):
         """
         Decide where file and replicas should be stored, then gossip
         the dictionary
@@ -364,49 +357,70 @@ class Server:
             sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
             self.file_info[sdfs_file_name] = {
-                    "heartbeat" : self.file_info[sdfs_file_name]['heartbeat']+1 if sdfs_file_name in self.file_info else 1,
+                    "heartbeat" : self.file_info[sdfs_file_name]['heartbeat'] + 1 if sdfs_file_name in self.file_info else 1,
                     "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
             }  
-            for node in file_locations:
-                target_machine = self.index_to_ip(node)
-                self.send_file(target_machine, local_file_path, sdfs_file_path)
+            target_machine = self.index_to_ip(target_machine_ix)
+            self.send_file(target_machine, local_file_path, sdfs_file_path)
                 
-            
-            print(f"Put file {sdfs_file_name} on machines {file_locations}")
+            print(f"Put file {sdfs_file_name} on machine {target_machine}")
     
+    def send_update_request(self, local_file_name, sdfs_file_name):
+        update_request = {
+            "update_request" : {
+                "local_file_name" : local_file_name,
+                "file_name" : sdfs_file_name,
+                "from" : self.current_machine_ix
+            }
+        }
+        file_location = self.file_info[sdfs_file_name]["locations"] if sdfs_file_name in self.file_info else self.get_file_locations(sdfs_file_name)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            for location in file_location:
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+
     def handle_update_request(self, update_request):
         with self.file_list_lock:
             message_content = update_request["update_request"]
             sdfs_file_name = message_content["file_name"]
-            if (sdfs_file_name in self.file_list):
-                # More recent version, update
-                if (message_content["version"] > self.file_list[sdfs_file_name]["version"]):
-                    self.file_list[sdfs_file_name]["version"] = message_content["version"]
-                    self.file_list[sdfs_file_name]["contents"] = message_content["contents"]
-                    self.file_list[sdfs_file_name]["locations"] = message_content["locations"]
-            # First time updating
-            else:
-                self.file_list[sdfs_file_name] = {}
-                self.file_list[sdfs_file_name]["version"] = 1
-                self.file_list[sdfs_file_name]["contents"] = message_content["contents"]
-                self.file_list[sdfs_file_name]["locations"] = message_content["locations"]
-            print("After update request", self.file_list)  
+            local_file_name = message_content["local_file_name"]
+            node_from = message_content["from"]
+            update_response = {
+                "update_response" : {
+                    "file_name" : sdfs_file_name,
+                    "local_file_name" : local_file_name,
+                    "status" : "success",
+                    "from" : self.current_machine_ix
+                }
+            }
+            # Check queue later here
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
+    
+    def handle_update_response(self, update_response):
+        with self.file_list_lock:
+            message_content = update_response["update_response"]
+            sdfs_file_name = message_content["file_name"]
+            local_file_name = message_content["local_file_name"]
+            node_from = message_content["from"]
+            self.upload_file(node_from, local_file_name, sdfs_file_name)
     
     def send_delete_request(self, filename):
-        file_location = self.get_file_locations(filename)
-        delete_request = {
-            "delete_request" : {
-                "file_name" : filename,
-                "from" : self.current_machine_ix
+        if (filename in self.file_info):
+            file_locations = self.file_info[filename]["locations"]
+            delete_request = {
+                "delete_request" : {
+                    "file_name" : filename,
+                    "from" : self.current_machine_ix
+                }
             }
-        }
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            for location in file_location:
-                s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                for location in file_locations:
+                    s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+        else:
+            print(f"Delete request for {filename} failed. File does not exist in distributed file system.")
     
 
     def handle_delete_request(self, delete_message):
-        #to do
         with self.file_list_lock:
             sdfs_file_name = delete_message["delete_request"]["file_name"]
             target_node = delete_message["delete_request"]["from"]
@@ -436,21 +450,22 @@ class Server:
         file_name = delete_response["file_name"]
         delete_from = delete_response["from"]
         if delete_response["status"] == "success":
-            print(f"DELETE request succeeded: deleted {file_name}, from {delete_from}")
+            print(f"Deleted {file_name}, from {delete_from}")
         else:
             print(f"Error when attempting to deleting contents of {file_name}, from {delete_from}")
 
     
     def send_get_request(self, sdfs_file_name):
-        file_location = self.get_file_locations(sdfs_file_name)
-        get_request = {
-            "get_request" : {
-                "file_name" : sdfs_file_name,
-                "from" : self.current_machine_ix
+        if (sdfs_file_name in self.file_info):
+            file_locations = self.file_info[sdfs_file_name]["locations"]
+            get_request = {
+                "get_request" : {
+                    "file_name" : sdfs_file_name,
+                    "from" : self.current_machine_ix
+                }
             }
-        }
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_location[0]), DEFAULT_PORT_NUM))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_locations[0]), DEFAULT_PORT_NUM))
     
     def handle_get_request(self, get_message):
         with self.file_list_lock:
@@ -481,10 +496,9 @@ class Server:
             print(f"Error when attempting to fetch contents of {file_name}")
     
     def print_file_info(self):
-        
-        
         with self.file_list_lock:
             print("the info list is ", self.file_info)
+
     def user_input(self):
         """
         Toggle the sending process on or off.
@@ -499,12 +513,12 @@ class Server:
                 print("Starting to send messages.")
                 self.membership_list = {
                 f"{ip}:{port}:{self.timejoin}": {
-                "id": f"{ip}:{port}:{self.timejoin}",
-                "addr": (ip, port),
-                "heartbeat": 0,
-                "status": "Alive",
-                "incarnation": 0,
-                "time": time.time(),
+                    "id": f"{ip}:{port}:{self.timejoin}",
+                    "addr": (ip, port),
+                    "heartbeat": 0,
+                    "status": "Alive",
+                    "incarnation": 0,
+                    "time": time.time(),
                 }
                 for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
             }    
@@ -519,14 +533,13 @@ class Server:
                 print("Stopping gossip S.")
             elif user_input == 'list_mem':
                 print(self.print_membership_list())
-            
             elif user_input == 'list_file':    
-                print(self.print_file_info())
+                self.print_file_info()
             elif user_input == 'list_self':
                 self.print_id()
             elif user_input.startswith('put'):
                 info = user_input.split(sep = ' ')
-                self.upload_file(info[1], info[2])
+                self.send_update_request(info[2])
             elif user_input.startswith('get'):
                 info = user_input.split(sep = ' ')
                 self.send_get_request(info[1])
