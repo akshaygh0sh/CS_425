@@ -171,7 +171,7 @@ class Server:
                 
                 with self.file_list_lock:
                     data_list = data_list["file_info"]
-                    # Check each value in the file_info list, if the incoming hearbeat
+                    # Check each value in the file_info list, if the incoming heartbeat
                     # value is greater than the local heartbeat value for that file,
                     # update the local heartbeat file value and change the local locations
                     # to the incoming locations
@@ -187,7 +187,7 @@ class Server:
                                 self.file_info[file_key] = data_list[file_key]
                                 #print("2")
                             
-                            elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']: #this statment fails
+                            elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['heartbeat']: #this statment fails
                                 #print("4")
                                 self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
                                 #print("5")
@@ -372,7 +372,7 @@ class Server:
             sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
             self.file_info[sdfs_file_name] = {
-                    "heartbeat" : self.file_info[sdfs_file_name]['hearbeat']+1 if sdfs_file_name in self.file_info else 1,
+                    "heartbeat" : self.file_info[sdfs_file_name]['heartbeat']+1 if sdfs_file_name in self.file_info else 1,
                     "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
             }  
             for node in file_locations:
