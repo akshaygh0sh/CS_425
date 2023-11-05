@@ -471,7 +471,6 @@ class Server:
             message_content = update_finish["update_finish"]
             file_name = message_content["file_name"]
             node_from = message_content["from"]
-            queue_copy = list(self.write_queue.queue)
             with self.writin_lock:
                 self.writing_enabled = True
             print("Writing now enabled")
