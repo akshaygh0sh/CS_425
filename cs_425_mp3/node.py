@@ -122,6 +122,7 @@ class Server:
     def update_lists(self, data_list):
         # Method to update the membership list of the server with received information.
             # Iterate through the received membership list.
+            
             if "membership_list" in data_list:
                 with self.membership_lock:
                     data_list = data_list["membership_list"]
@@ -167,6 +168,7 @@ class Server:
                                 print("log message is ",  log_message)
                             logger.info("[JOIN]   - {}".format(member_id))
             elif "file_info" in data_list:
+                print("file info datalist is", data_list)
                 with self.file_list_lock:
                     data_list = data_list["file_info"]
                     # Check each value in the file_info list, if the incoming hearbeat
