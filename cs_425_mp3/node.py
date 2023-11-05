@@ -455,23 +455,15 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
-        self.write_queue.put(update_response)
+
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
-        
-        while True:
-            if self.write_queue.qsize() == 0:
-                break
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
-        print("Received write finish acknowledgement")
-        if (self.write_queue.not_empty()):
-            self.write_queue.get_nowait()
-        self.print_writing_flag()
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
