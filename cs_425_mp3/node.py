@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import base64
 import paramiko
+import queue
 
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
@@ -84,7 +85,7 @@ class Server:
         self.enable_sending = True
         self.gossipS = False
         # To keep track of when writing is enabled
-        self.writing_enabled = True
+        self.write_queue = queue.Queue()
 
     def get_info(self):
         try:
@@ -453,20 +454,21 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
-        # If something is still writing, don't allow node to write
-        while True:
-            if (self.writing_enabled):
-                break
-        self.writing_enabled = False
+        self.write_queue.put(update_response)
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
-    
+        
+        while True:
+            if self.write_queue.empty():
+                break
+
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
-        self.writing_enabled = True
+        if (self.write_queue.not_empty()):
+            self.write_queue.get()
         print("Writing enabled")
 
     def handle_update_response(self, update_response):
