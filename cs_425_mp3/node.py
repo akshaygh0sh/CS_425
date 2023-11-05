@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import base64
 import paramiko
+
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
 # The 'Introducer' variable points to a specific host in the system that may serve as an introducer node.
@@ -48,10 +49,10 @@ class Server:
         self.port = DEFAULT_PORT_NUM
         self.heartbeat = 0
         self.timejoin = int(time.time())
-        self.id = f"{self.index_to_ip(self.current_machine_ix)}:{self.timejoin}"
+        self.id = f"{self.ip}:{self.port}:{self.timejoin}"
         self.addr = (self.ip, self.port)
         self.membership_list = {
-                f"{self.index_to_ip(self.current_machine_ix)}:{self.timejoin}": {
+                f"{ip}:{port}:{self.timejoin}": {
                 "id": f"{ip}:{port}:{self.timejoin}",
                 "addr": (ip, port),
                 "heartbeat": 0,
@@ -442,7 +443,7 @@ class Server:
                 self.enable_sending = True
                 print("Starting to send messages.")
                 self.membership_list = {
-                f"{self.index_to_ip(self.current_machine_ix)}:{self.timejoin}": {
+                f"{ip}:{port}:{self.timejoin}": {
                 "id": f"{ip}:{port}:{self.timejoin}",
                 "addr": (ip, port),
                 "heartbeat": 0,
