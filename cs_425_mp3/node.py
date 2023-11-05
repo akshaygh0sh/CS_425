@@ -185,7 +185,8 @@ class Server:
                                 available_locations = healthy_nodes - set(new_locations)
                                 if replica in failed_nodes:
                                     new_locations.remove(replica)
-                                    new_locations.append(random.sample(available_locations, 1)[0])
+                                    if (len(available_locations) > 0):
+                                        new_locations.append(random.sample(available_locations, 1)[0])
                             # If fixing broken replicas, update heartbeat
                             if (new_locations != self.file_info[file_key]["locations"] and 
                                 self.file_info[file_key]['heartbeat'] == data_list[file_key]['heartbeat']):
