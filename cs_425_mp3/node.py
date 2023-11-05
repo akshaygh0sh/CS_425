@@ -84,8 +84,6 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
-        # To keep track of when writing is enabled
-        self.write_locks = {}
 
     def get_info(self):
         try:
@@ -438,16 +436,6 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
-    def print_writing_flag(self):
-        print(self.write_locks)
-
-    def is_write_locked(self, sdfs_file_name):
-        return sdfs_file_name in self.write_locks
-
-    def clear_write_lock(self, sdfs_file_name):
-        if sdfs_file_name in self.write_locks:
-            del self.write_locks[sdfs_file_name]
-
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
         sdfs_file_name = message_content["file_name"]
@@ -461,21 +449,14 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
-        # Wait for write lock to be lifted
-        while True:
-            if not self.is_write_locked(sdfs_file_name):
-                break
-        
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
-        self.write_locks[sdfs_file_name] = True
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
-        self.clear_write_lock(file_name)
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
