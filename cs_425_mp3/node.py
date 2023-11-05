@@ -180,8 +180,7 @@ class Server:
                     
                     for file_key in data_list:
                         print("file info datalist is", data_list)
-                        print("the type is ", type(data_list[file_key]['heartbeat']))
-                        print("the type is ", type(self.file_info[file_key]['hearbeat']))
+                        print("file info is", self.file_info)
                         if file_key not in self.file_info:
                             #print("1")
                             self.file_info[file_key] = data_list[file_key]
