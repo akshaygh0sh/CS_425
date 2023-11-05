@@ -122,9 +122,9 @@ class Server:
     def update_lists(self, data_list):
         # Method to update the membership list of the server with received information.
             # Iterate through the received membership list.
-            if "mem_list" in data_list:
+            if "membership_list" in data_list:
                 with self.membership_lock:
-                    data_list = data_list["mem_list"]
+                    data_list = data_list["membership_list"]
                     for member_id, member_info in data_list.items():
                         if member_info['heartbeat'] == 0:
                             # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
@@ -359,14 +359,15 @@ class Server:
             local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
             sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
-            self.file_info[sdfs_file_name] = {
-                    "heartbeat" : 1,
-                    "locations" : file_locations
-            }  
+              
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
                 self.send_file(target_machine, local_file_path, sdfs_file_path)
-
+                
+            self.file_info[sdfs_file_name] = {
+                    "heartbeat" : self.file_info[sdfs_file_name]['hearbeat']+1 if sdfs_file_name in self.file_info else 1,
+                    "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
+            }
             print(f"Put file {sdfs_file_name} on machines {file_locations}")
     
     def handle_update_request(self, update_request):
@@ -550,15 +551,15 @@ class Server:
                     if self.enable_sending:  # Check if sending is enabled
                         self.update_heartbeat()
                         peers = self.select_gossip_targets()
-                        for peer in peers:
-                            mem_list, file_info = self.json() if message is None else message
+                        mem_list, file_info = self.json()
                             
-                            mem_list = {
-                                "membership_list" : mem_list
-                            }
-                            file_info = {
-                                "file_info" : file_info
-                            }
+                        mem_list = {
+                            "membership_list" : mem_list
+                        }
+                        file_info = {
+                            "file_info" : file_info
+                        }
+                        for peer in peers:
                             s.sendto(json.dumps(mem_list).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
                             s.sendto(json.dumps(file_info).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
