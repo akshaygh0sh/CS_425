@@ -84,6 +84,8 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
+        # Writing lock
+        self.writing_locks = {}
 
     def get_info(self):
         try:
@@ -219,7 +221,6 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
-
     def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
         with self.membership_lock:
@@ -332,8 +333,7 @@ class Server:
         # Method to randomly choose members from the membership list to send messages to.
         with self.membership_lock:
             candidates = list(self.membership_list.keys())
-            random.shuffle(candidates)  # Shuffle the list in-place
-            return candidates[:self.n_send]
+            return candidates
 
     def receive(self):
         """
@@ -404,7 +404,14 @@ class Server:
     def get_file_locations(self, file_name):
         original_location = self.get_original_location(file_name)
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
-            
+    
+    def acquire_writing_lock(self, sdfs_file_name):
+        self.writing_locks[sdfs_file_name] = True
+    
+    def release_writing_lock(self, sdfs_file_name):
+        if sdfs_file_name in self.writing_locks:
+            del self.writing_locks[sdfs_file_name]
+
     def upload_file(self, target_machine_ix, local_file_name, sdfs_file_name):
         """
         Decide where file and replicas should be stored, then gossip
@@ -449,14 +456,22 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
+        # File doesn't have lock on it, can satisfy update requests
+        while True:
+            if not (sdfs_file_name in self.writing_locks):
+                break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
+        
+        # Put lock on file
+        self.acquire_writing_lock(sdfs_file_name)
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
+        self.release_writing_lock(file_name)
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
