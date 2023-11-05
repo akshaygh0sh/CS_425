@@ -168,7 +168,7 @@ class Server:
                                 print("log message is ",  log_message)
                             logger.info("[JOIN]   - {}".format(member_id))
             elif "file_info" in data_list:
-                print("file info datalist is", data_list)
+                
                 with self.file_list_lock:
                     data_list = data_list["file_info"]
                     # Check each value in the file_info list, if the incoming hearbeat
@@ -179,6 +179,7 @@ class Server:
                     # then we should just add the next available node (if we lost 3, we add 4, etc)
                     
                     for file_key in data_list:
+                        print("file info datalist is", data_list)
                         if file_key not in self.file_info:
                             self.file_info[file_key] = data_list[file_key]
                         
