@@ -644,7 +644,7 @@ class Server:
             elif user_input.startswith('multiread'):
                 info = user_input.split(sep = ' ')
                 file_name = info[1]
-                targets = info[2:]
+                targets = [int(ix) for ix in info[1:]]
                 self.multi_read(file_name, targets)
             elif user_input.lower() == 'exit':
                 break
