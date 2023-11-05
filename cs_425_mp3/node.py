@@ -439,8 +439,7 @@ class Server:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
     def print_writing_flag(self):
-        print(self.write_queue.queue)
-        print(self.write_queue.empty())
+        print(self.write_locks)
 
     def is_write_locked(self, sdfs_file_name):
         return sdfs_file_name in self.write_locks
@@ -471,7 +470,7 @@ class Server:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
         self.write_locks[sdfs_file_name] = True
-        
+
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
