@@ -384,7 +384,7 @@ class Server:
         scp_client.close()
         ssh_client.close()
 
-        sdfs_file_name = sdfs_file_name.split('/')[-1]
+        sdfs_file_name = sdfs_file_path.split('/')[-1]
         update_finish = {
             "update_finish" : {
                 "file_name" : sdfs_file_name,
