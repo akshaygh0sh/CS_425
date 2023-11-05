@@ -468,9 +468,10 @@ class Server:
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
+        print("Received write finish acknowledgement")
         if (self.write_queue.not_empty()):
-            self.write_queue.get()
-        print("Writing enabled")
+            self.write_queue.get_nowait()
+        self.print_writing_flag()
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
