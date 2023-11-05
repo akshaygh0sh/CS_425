@@ -187,9 +187,9 @@ class Server:
                                 self.file_info[file_key] = data_list[file_key]
                                 #print("2")
                             
-                            elif ('heartbeat' in data_list[file_key] and 'heartbeat' in self.file_info[file_key]) and data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']: #this statment fails
+                            elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']: #this statment fails
                                 #print("4")
-                                self.file_info[file_key]['hearbeat'] = data_list[file_key]['heartbeat']
+                                self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
                                 #print("5")
                                 self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
                                 #print("6")
