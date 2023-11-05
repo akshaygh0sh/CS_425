@@ -199,7 +199,7 @@ class Server:
                             if (len(overlap) > 1):
                                 # Nodes that got nominated to replicate that don't have file yet
                                 no_file = list(set(new_locations)- overlap)
-                                self.handle_replica_replacement(random.sample(overlap, 1)[0], no_file)
+                                self.handle_replica_replacement(file_key, random.sample(overlap, 1)[0], no_file)
 
                             self.file_info[file_key]["locations"] =  new_locations
                     except Exception as e:
