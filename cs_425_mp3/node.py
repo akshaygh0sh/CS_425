@@ -85,6 +85,7 @@ class Server:
         self.enable_sending = True
         self.gossipS = False
         # Writing lock
+        self.writing_thread_lock = threading.Lock()
         self.writing_locks = {}
 
     def get_info(self):
@@ -406,11 +407,13 @@ class Server:
         return [(original_location + ix) % 10 + 1 for ix in range(4)]
     
     def acquire_writing_lock(self, sdfs_file_name):
-        self.writing_locks[sdfs_file_name] = True
+        with self.writing_thread_lock:
+            self.writing_locks[sdfs_file_name] = True
     
     def release_writing_lock(self, sdfs_file_name):
-        if sdfs_file_name in self.writing_locks:
-            del self.writing_locks[sdfs_file_name]
+        with self.writing_thread_lock:
+            if sdfs_file_name in self.writing_locks:
+                del self.writing_locks[sdfs_file_name]
 
     def upload_file(self, target_machine_ix, local_file_name, sdfs_file_name):
         """
