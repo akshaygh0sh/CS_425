@@ -234,6 +234,22 @@ class Server:
                     for m in self.membership_list.values()
                 }
 
+    def ip_to_machine_id(self, ip):
+        ip = ip.split(':')[0]
+        ip_to_machine_id = {
+            "172.22.158.185" : HOST_NAME_LIST[0],
+            "172.22.94.185" : HOST_NAME_LIST[1],
+            "172.22.156.186" : HOST_NAME_LIST[2],
+            "172.22.158.186" : HOST_NAME_LIST[3],
+            "172.22.94.186" : HOST_NAME_LIST[4],
+            "172.22.156.187" : HOST_NAME_LIST[5],
+            "172.22.158.187" : HOST_NAME_LIST[6],
+            "172.22.94.187" : HOST_NAME_LIST[7],
+            "172.22.156.188" : HOST_NAME_LIST[8],
+            "172.22.158.188" : HOST_NAME_LIST[9]
+        }   
+        return ip_to_machine_id[ip]
+
     def print_membership_list(self):
         # Method to print the membership list to the log file and return it as a string.
         with self.membership_lock:
