@@ -221,7 +221,7 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
-    def suspect_nodes(self):
+    def suspect_nodes(self): 
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
         with self.membership_lock:
             now = int(time.time())
@@ -590,6 +590,9 @@ class Server:
     def print_file_info(self):
         with self.file_list_lock:
             print("the info list is ", self.file_info)
+
+    def print_writing_flag(self):
+        print(self.writing_locks)
 
     def user_input(self):
         """
