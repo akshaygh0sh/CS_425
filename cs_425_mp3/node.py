@@ -438,6 +438,9 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
 
+    def print_queue(self):
+        print(self.write_queue.queue)
+
     def handle_update_request(self, update_request):
         with self.file_list_lock:
             message_content = update_request["update_request"]
@@ -452,12 +455,10 @@ class Server:
                     "from" : self.current_machine_ix
                 }
             }
-            print("Before", self.write_queue.queue)
             # If something is still writing, don't allow node to write
             while True:
                 if (self.write_queue.empty()):
                     break
-            print("After", self.write_queue.queue)
             self.write_queue.put({
                 "file_name" : sdfs_file_name,
                 "from" : node_from
@@ -630,6 +631,8 @@ class Server:
                 self.ls_files(info[1])
             elif user_input == 'store':
                 self.store()
+            elif user_input == 'print_queue':
+                self.print_queue()
             elif user_input.lower() == 'exit':
                 break
             else:
