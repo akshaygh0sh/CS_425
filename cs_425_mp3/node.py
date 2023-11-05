@@ -459,6 +459,7 @@ class Server:
             while True:
                 if (self.write_queue.empty()):
                     break
+
             self.write_queue.put({
                 "file_name" : sdfs_file_name,
                 "from" : node_from
@@ -477,6 +478,7 @@ class Server:
             if (len(queue_copy) > 0):
                 if (queue_copy[0]["file_name"] == file_name and queue_copy[0]["from"] == node_from):
                     top = self.write_queue.get()
+            print("Removed from queue, now:", self.write_queue.queue)
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
