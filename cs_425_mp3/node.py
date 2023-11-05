@@ -178,9 +178,24 @@ class Server:
                     try:
                         if file_key not in self.file_info:
                             self.file_info[file_key] = data_list[file_key]                         
-                        elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['heartbeat']:
-                            self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
-                            self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
+                        elif data_list[file_key]['heartbeat'] >= self.file_info[file_key]['heartbeat']:
+                            failed_nodes, healthy_nodes = self.get_failed_nodes()
+                            new_locations = self.file_info[file_key]["locations"]
+                            
+                            for replica in self.file_info[file_key]["locations"]:
+                                available_locations = healthy_nodes - set(new_locations)
+                                if replica in failed_nodes:
+                                    new_locations.remove(replica)
+                                    new_locations.append(random.sample(available_locations, 1))
+                            
+                            # If fixing broken replicas, update heartbeat
+                            if (new_locations != self.file_info[file_key]["locations"] and 
+                                self.file_info[file_key]['heartbeat'] == data_list[file_key]['heartbeat']):
+                                
+                                self.file_info[file_key]['heartbeat'] += 1
+                            else:
+                                self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
+                            self.file_info[file_key]["locations"] =  new_locations
                     except Exception as e:
                         print("Error when updating file info:", e)
 
@@ -257,18 +272,28 @@ class Server:
     def ip_to_machine_id(self, ip):
         ip = ip.split(':')[0]
         ip_to_machine_id = {
-            "172.22.158.185" : HOST_NAME_LIST[0],
-            "172.22.94.185" : HOST_NAME_LIST[1],
-            "172.22.156.186" : HOST_NAME_LIST[2],
-            "172.22.158.186" : HOST_NAME_LIST[3],
-            "172.22.94.186" : HOST_NAME_LIST[4],
-            "172.22.156.187" : HOST_NAME_LIST[5],
-            "172.22.158.187" : HOST_NAME_LIST[6],
-            "172.22.94.187" : HOST_NAME_LIST[7],
-            "172.22.156.188" : HOST_NAME_LIST[8],
-            "172.22.158.188" : HOST_NAME_LIST[9]
+            "172.22.158.185" : 1,
+            "172.22.94.185" : 2,
+            "172.22.156.186" : 3,
+            "172.22.158.186" : 4,
+            "172.22.94.186" : 5,
+            "172.22.156.187" : 6,
+            "172.22.158.187" : 7,
+            "172.22.94.187" : 8,
+            "172.22.156.188" : 9,
+            "172.22.158.188" : 10
         }   
         return ip_to_machine_id[ip]
+    
+    # Get set of nodes that aren't in membership list
+    # return failed nodes, healthy nodes
+    def get_failed_nodes(self):
+        with self.membership_lock:
+            healthy_nodes = list(self.membership_list.keys())
+            healthy_nodes = [self.ip_to_machine_id(key) for key in healthy_nodes]
+            healthy_nodes = set(healthy_nodes)
+            all_nodes = set(range(1, 11))
+            return all_nodes - healthy_nodes, healthy_nodes
 
     def print_membership_list(self):
         # Method to print the membership list to the log file and return it as a string.
@@ -417,7 +442,6 @@ class Server:
                     s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
         else:
             print(f"Delete request for {filename} failed. File does not exist in distributed file system.")
-    
 
     def handle_delete_request(self, delete_message):
         with self.file_list_lock:
