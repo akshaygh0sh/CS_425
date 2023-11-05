@@ -460,8 +460,8 @@ class Server:
                 while not self.writing_enabled:
                     self.writing_condition.wait()
 
-            self.writing_enabled = False
-            self.writing_condition.notify()
+                self.writing_enabled = False
+                self.writing_condition.notify()
             # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
