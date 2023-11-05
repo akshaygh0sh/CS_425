@@ -520,7 +520,6 @@ class Server:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
 
-                
     def handle_delete_response(self, message):
         delete_response = message["delete_response"]
         file_name = delete_response["file_name"]
@@ -530,7 +529,6 @@ class Server:
         else:
             print(f"Error when attempting to deleting contents of {file_name}, from {delete_from}")
         
-    
     def multi_read(self, sdfs_file_name, targets):
         if (sdfs_file_name in self.file_info):
             file_locations = self.file_info[sdfs_file_name]["locations"]
