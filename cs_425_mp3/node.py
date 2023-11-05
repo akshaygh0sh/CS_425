@@ -467,7 +467,6 @@ class Server:
         file_name = message_content["file_name"]
         node_from = message_content["from"]
         self.writing_enabled = True
-        print("Writing now enabled")
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
