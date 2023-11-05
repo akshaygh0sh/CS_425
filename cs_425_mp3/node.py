@@ -62,6 +62,7 @@ class Server:
             }
             for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
         }
+        self.file_info = {}
         self.file_list = {}
         # List to track failed members.
         self.failed_nodes = {}
@@ -118,51 +119,72 @@ class Server:
             for file in stored_files:
                 print(f"{file} stored at machine {self.current_machine_ix}")
 
-    def update_membership_list(self, membershipList):
+    def update_lists(self, data_list):
         # Method to update the membership list of the server with received information.
-        with self.membership_lock:
             # Iterate through the received membership list.
-            for member_id, member_info in membershipList.items():
-                if member_info['heartbeat'] == 0:
-                    # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
-                    continue
-                if member_id in self.failed_nodes:
-                    # Skip members that are already in the failed members list.
-                    continue
+            if "mem_list" in data_list:
+                with self.membership_lock:
+                    data_list = data_list["mem_list"]
+                    for member_id, member_info in data_list.items():
+                        if member_info['heartbeat'] == 0:
+                            # Skip members with heartbeat equal to 0, to clear out the initial introducor with 0 heartbeat.
+                            continue
+                        if member_id in self.failed_nodes:
+                            # Skip members that are already in the failed members list.
+                            continue
 
-                member_info.setdefault("status", "Alive")
-                member_info.setdefault("incarnation", 0)
-                #if the server receive the suspect message about itself, overwrite the message with great incarnation number:
-                if member_id == self.id:
-                    if member_info["status"] == "Suspect":
-                         if self.incarnation < member_info["incarnation"]:
-                            self.incarnation = member_info["incarnation"] + 1
-                # Check if the member is already in the MembershipList
-                if member_id in self.membership_list:
-                    current_heartbeat = self.membership_list[member_id]["heartbeat"]
-                    # Incarnation overwrite heartbeat
-                    if member_info["incarnation"] > self.membership_list[member_id]["incarnation"]:
-                        self.membership_list[member_id] = member_info
-                        self.membership_list[member_id]["time"] = time.time()
-                        #if suspect print out
-                        if self.membership_list[member_id]["status"] == "Suspect":
-                            logger.info("[SUS]    - {}".format(member_id))
-                            log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                            print(log_message)
-                    # Update only if the received heartbeat is greater and both at the same incarnation
-                    elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
-                        self.membership_list[member_id] = member_info
-                        self.membership_list[member_id]["time"] = time.time()
-                else:
-                    # If the member is not in the MembershipList, add it
-                    self.membership_list[member_id] = member_info
-                    self.membership_list[member_id]["time"] = time.time()
-                    # If suspect print out 
-                    if self.membership_list[member_id]["status"] == "Suspect":
-                        logger.info("[SUS]    - {}".format(member_id))
-                        log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                        print(log_message)
-                    logger.info("[JOIN]   - {}".format(member_id))
+                        member_info.setdefault("status", "Alive")
+                        member_info.setdefault("incarnation", 0)
+                        #if the server receive the suspect message about itself, overwrite the message with great incarnation number:
+                        if member_id == self.id:
+                            if member_info["status"] == "Suspect":
+                                if self.incarnation < member_info["incarnation"]:
+                                    self.incarnation = member_info["incarnation"] + 1
+                        # Check if the member is already in the MembershipList
+                        if member_id in self.membership_list:
+                            current_heartbeat = self.membership_list[member_id]["heartbeat"]
+                            # Incarnation overwrite heartbeat
+                            if member_info["incarnation"] > self.membership_list[member_id]["incarnation"]:
+                                self.membership_list[member_id] = member_info
+                                self.membership_list[member_id]["time"] = time.time()
+                                #if suspect print out
+                                if self.membership_list[member_id]["status"] == "Suspect":
+                                    logger.info("[SUS]    - {}".format(member_id))
+                                    log_message = f"Incaroverwrite: ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
+                                    print(log_message)
+                            # Update only if the received heartbeat is greater and both at the same incarnation
+                            elif member_info["heartbeat"] > current_heartbeat and member_info["incarnation"] == self.membership_list[member_id]["incarnation"]:
+                                self.membership_list[member_id] = member_info
+                                self.membership_list[member_id]["time"] = time.time()
+                        else:
+                            # If the member is not in the MembershipList, add it
+                            self.membership_list[member_id] = member_info
+                            self.membership_list[member_id]["time"] = time.time()
+                            # If suspect print out 
+                            if self.membership_list[member_id]["status"] == "Suspect":
+                                logger.info("[SUS]    - {}".format(member_id))
+                                log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
+                                print(log_message)
+                            logger.info("[JOIN]   - {}".format(member_id))
+            elif "file_info" in data_list:
+                with self.file_list_lock:
+                    data_list = data_list["file_info"]
+                    # Check each value in the file_info list, if the incoming hearbeat
+                    # value is greater than the local heartbeat value for that file,
+                    # update the local heartbeat file value and change the local locations
+                    # to the incoming locations
+                    # IF there aren't enough locations (which means we lost a replica),
+                    # then we should just add the next available node (if we lost 3, we add 4, etc)
+                    
+                    for file_key in data_list:
+                        if file_key not in self.file_info:
+                            self.file_info[file_key] = data_list[file_key]
+                        
+                        if data_list[file_key]['heartbeat'] > self.file_info[file_key]['hearbeat']:
+                            self.file_info[file_key]['hearbeat'] = data_list[file_key]['heartbeat']
+                            self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
+                            
+                
 
     def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
@@ -222,7 +244,7 @@ class Server:
                         'incarnation': m['incarnation']
                     }
                     for m in self.membership_list.values()
-                }
+                }, self.file_info
             else:
             # If not using GossipS protocol, include basic information like ID, address, and heartbeat.
                 return {
@@ -232,8 +254,12 @@ class Server:
                         'heartbeat': m['heartbeat'] ,
                     }
                     for m in self.membership_list.values()
-                }
-
+                }, self.file_info
+    # def list_json(self):
+    #     with self.membership_lock:
+    #         retur
+        
+        
     def ip_to_machine_id(self, ip):
         ip = ip.split(':')[0]
         ip_to_machine_id = {
@@ -296,7 +322,7 @@ class Server:
                             elif ("get_response" in msgs):
                                 self.handle_get_response(msgs)
                             else:
-                                self.update_membership_list(msgs) 
+                                self.update_lists(msgs) 
                 except Exception as e:
                     print(e)
     
@@ -333,6 +359,10 @@ class Server:
             local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
             sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
+            self.file_info[sdfs_file_name] = {
+                    "heartbeat" : 1,
+                    "locations" : file_locations
+            }  
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
                 self.send_file(target_machine, local_file_path, sdfs_file_path)
@@ -516,8 +546,16 @@ class Server:
                         self.update_heartbeat()
                         peers = self.select_gossip_targets()
                         for peer in peers:
-                            send_msg = self.json() if message is None else message
-                            s.sendto(json.dumps(send_msg).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
+                            mem_list, file_info = self.json() if message is None else message
+                            
+                            mem_list = {
+                                "membership_list" : mem_list
+                            }
+                            file_info = {
+                                "file_info" : file_info
+                            }
+                            s.sendto(json.dumps(mem_list).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
+                            s.sendto(json.dumps(file_info).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print(e)
