@@ -353,19 +353,18 @@ class Server:
         Decide where file and replicas should be stored, then gossip
         the dictionary
         """
-        with self.file_list_lock:
-            file_locations = self.get_file_locations(sdfs_file_name)
-            local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
-            sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
-            # Send update request to necessary nodes
-            self.file_info[sdfs_file_name] = {
-                    "heartbeat" : self.file_info[sdfs_file_name]['heartbeat'] + 1 if sdfs_file_name in self.file_info else 1,
-                    "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
-            }  
-            target_machine = self.index_to_ip(target_machine_ix)
-            self.send_file(target_machine, local_file_path, sdfs_file_path)
-                
-            print(f"Put file {sdfs_file_name} on machine {target_machine}")
+        file_locations = self.get_file_locations(sdfs_file_name)
+        local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
+        sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
+        # Send update request to necessary nodes
+        self.file_info[sdfs_file_name] = {
+                "heartbeat" : self.file_info[sdfs_file_name]['heartbeat'] + 1 if sdfs_file_name in self.file_info else 1,
+                "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
+        }  
+        target_machine = self.index_to_ip(target_machine_ix)
+        self.send_file(target_machine, local_file_path, sdfs_file_path)
+            
+        print(f"Put file {sdfs_file_name} on machine {target_machine}")
     
     def send_update_request(self, local_file_name, sdfs_file_name):
         update_request = {
