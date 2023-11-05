@@ -455,12 +455,12 @@ class Server:
                     "from" : self.current_machine_ix
                 }
             }
-            # If something is still writing, don't allow node to write
-            while True:
-                if (self.writing_enabled):
-                    break
-
             with self.writing_lock:
+                # If something is still writing, don't allow node to write
+                while True:
+                    if (self.writing_enabled):
+                        break
+
                 self.writing_enabled = False
             # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
