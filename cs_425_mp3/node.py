@@ -85,7 +85,6 @@ class Server:
         self.gossipS = False
         # To keep track of when writing is enabled
         self.writing_enabled = True
-        self.writing_condition = threading.Condition()
 
     def get_info(self):
         try:
@@ -456,12 +455,10 @@ class Server:
                 }
             }
             # If something is still writing, don't allow node to write
-            with self.writing_condition:
-                while not self.writing_enabled:
-                    self.writing_condition.wait()
-
-                self.writing_enabled = False
-                self.writing_condition.notify()
+            while True:
+                if (self.writing_enabled):
+                    break
+            self.writing_enabled = False
             # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
@@ -471,9 +468,7 @@ class Server:
             message_content = update_finish["update_finish"]
             file_name = message_content["file_name"]
             node_from = message_content["from"]
-            with self.writing_condition:
-                self.writing_enabled = True
-                self.writing_condition.notify()
+            self.writing_enabled = True
             print("Writing now enabled")
 
     def handle_update_response(self, update_response):
