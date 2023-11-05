@@ -525,7 +525,23 @@ class Server:
             print(f"Deleted {file_name}, from {delete_from}")
         else:
             print(f"Error when attempting to deleting contents of {file_name}, from {delete_from}")
+        
+    
+    def multi_read(self, sdfs_file_name, targets):
+        if (sdfs_file_name in self.file_info):
+            file_locations = self.file_info[sdfs_file_name]["locations"]
+            for node in targets:
+                get_request = {
+                    "get_request" : {
+                        "file_name" : sdfs_file_name,
+                        "from" : node
+                    }
+                }
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    target_node = random.choice(file_locations)
+                    s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
 
+    
     def send_get_request(self, sdfs_file_name):
         if (sdfs_file_name in self.file_info):
             file_locations = self.file_info[sdfs_file_name]["locations"]
@@ -536,7 +552,8 @@ class Server:
                 }
             }
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(file_locations[0]), DEFAULT_PORT_NUM))
+                target_node = random.choice(file_locations)
+                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
     
     def handle_get_request(self, get_message):
         with self.file_list_lock:
@@ -624,6 +641,11 @@ class Server:
                 self.store()
             elif user_input == 'write_status':
                 self.print_writing_flag()
+            elif user_input.startswith('multiread'):
+                info = user_input.split(sep = ' ')
+                file_name = info[1]
+                targets = info[2:]
+                self.multi_read(file_name, targets)
             elif user_input.lower() == 'exit':
                 break
             else:
