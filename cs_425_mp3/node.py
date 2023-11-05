@@ -86,7 +86,6 @@ class Server:
         # To keep track of when writing is enabled
         self.writing_enabled = True
         self.writing_lock = threading.Lock()
-        self.writing_condition = threading.Condition(self.writing_lock)
 
     def get_info(self):
         try:
@@ -457,10 +456,11 @@ class Server:
                 }
             }
             # If something is still writing, don't allow node to write
-            with self.writing_lock:
-                while not self.writing_enabled:
-                    self.writing_condition.wait()
+            while True:
+                if (self.writing_enabled):
+                    break
 
+            with self.writing_lock:
                 self.writing_enabled = False
             # Send response, saying that it is ok to write
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -473,7 +473,6 @@ class Server:
             node_from = message_content["from"]
             with self.writing_lock:
                 self.writing_enabled = True
-                self.writing_condition.notify_all()
             print("Writing now enabled")
 
     def handle_update_response(self, update_response):
