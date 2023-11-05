@@ -179,20 +179,12 @@ class Server:
                     # then we should just add the next available node (if we lost 3, we add 4, etc)
                     
                     for file_key in data_list:
-                        print("file info datalist is", data_list)
-                        print("file info is", self.file_info)
                         try:
                             if file_key not in self.file_info:
-                                #print("1")
-                                self.file_info[file_key] = data_list[file_key]
-                                #print("2")
-                            
+                                self.file_info[file_key] = data_list[file_key]                         
                             elif data_list[file_key]['heartbeat'] > self.file_info[file_key]['heartbeat']: #this statment fails
-                                #print("4")
                                 self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
-                                #print("5")
                                 self.file_info[file_key]["locations"] =  data_list[file_key]["locations"]
-                                #print("6")
                         except Exception as e:
                             print("Error when updating file info:", e)
                             
