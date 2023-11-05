@@ -194,9 +194,30 @@ class Server:
                                 self.file_info[file_key]['heartbeat'] += 1
                             else:
                                 self.file_info[file_key]['heartbeat'] = data_list[file_key]['heartbeat']
+                            
+                            overlap = set(new_locations) & set(self.file_info[file_key]["locations"])
+                            if (len(overlap) > 1):
+                                # Nodes that got nominated to replicate that don't have file yet
+                                no_file = list(set(new_locations)) - overlap
+                                self.handle_replica_replacement(random.sample(overlap, 1)[0], no_file)
+
                             self.file_info[file_key]["locations"] =  new_locations
                     except Exception as e:
                         print("Error when updating file info:", e)
+
+    def handle_replica_replacement(self, sdfs_file_name, original_location, new_locations):
+        update_request = {
+            "update_request" : {
+                "local_file_name" : f"files/{sdfs_file_name}",
+                "file_name" : sdfs_file_name,
+                "from" : original_location
+            }
+        }
+        file_location = new_locations
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            for location in file_location:
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+
 
     def suspect_nodes(self):
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
