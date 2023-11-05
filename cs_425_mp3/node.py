@@ -180,8 +180,8 @@ class Server:
                     
                     for file_key in data_list:
                         print("file info datalist is", data_list)
-                        print(type(data_list[file_key]['heartbeat']))
-                        print(type(self.file_info[file_key]['hearbeat']))
+                        print("the type is ", type(data_list[file_key]['heartbeat']))
+                        print("the type is ", type(self.file_info[file_key]['hearbeat']))
                         if file_key not in self.file_info:
                             #print("1")
                             self.file_info[file_key] = data_list[file_key]
@@ -369,15 +369,15 @@ class Server:
             local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
             sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
             # Send update request to necessary nodes
-              
+            self.file_info[sdfs_file_name] = {
+                    "heartbeat" : self.file_info[sdfs_file_name]['hearbeat']+1 if sdfs_file_name in self.file_info else 1,
+                    "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
+            }  
             for node in file_locations:
                 target_machine = self.index_to_ip(node)
                 self.send_file(target_machine, local_file_path, sdfs_file_path)
                 
-            self.file_info[sdfs_file_name] = {
-                    "heartbeat" : self.file_info[sdfs_file_name]['hearbeat']+1 if sdfs_file_name in self.file_info else 1,
-                    "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
-            }
+            
             print(f"Put file {sdfs_file_name} on machines {file_locations}")
     
     def handle_update_request(self, update_request):
