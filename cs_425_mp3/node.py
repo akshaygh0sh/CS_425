@@ -461,7 +461,7 @@ class Server:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
         
         while True:
-            if self.write_queue.empty():
+            if self.write_queue.qsize() == 0:
                 break
 
     def handle_update_finish(self, update_finish):
