@@ -53,23 +53,14 @@ class Server:
         self.id = f"{self.ip}:{self.port}:{self.timejoin}"
         self.addr = (self.ip, self.port)
         self.membership_list = {
-                f"{ip}:{port}:{self.timejoin}": {
-                "id": f"{ip}:{port}:{self.timejoin}",
-                "addr": (ip, port),
-                "heartbeat": 0,
-                "incarnation":0,
-                "status": "Alive",
-                "time": time.time(), 
-            }
-            for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
         }
         self.file_info = {}
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
-        self.failure_time_threshold = 5
-        self.cleanup_time_threshold = 5
-        self.suspect_time_threshold = 5
+        self.failure_time_threshold = 7
+        self.cleanup_time_threshold = 7
+        self.suspect_time_threshold = 7
         self.protocol_period = args.protocol_period
         # Number of times to send messages.
         self.n_send = 3
