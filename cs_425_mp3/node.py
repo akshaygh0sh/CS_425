@@ -441,35 +441,33 @@ class Server:
         print(self.writing_enabled)
 
     def handle_update_request(self, update_request):
-        with self.file_list_lock:
-            message_content = update_request["update_request"]
-            sdfs_file_name = message_content["file_name"]
-            local_file_name = message_content["local_file_name"]
-            node_from = message_content["from"]
-            update_response = {
-                "update_response" : {
-                    "file_name" : sdfs_file_name,
-                    "local_file_name" : local_file_name,
-                    "status" : "success",
-                    "from" : self.current_machine_ix
-                }
+        message_content = update_request["update_request"]
+        sdfs_file_name = message_content["file_name"]
+        local_file_name = message_content["local_file_name"]
+        node_from = message_content["from"]
+        update_response = {
+            "update_response" : {
+                "file_name" : sdfs_file_name,
+                "local_file_name" : local_file_name,
+                "status" : "success",
+                "from" : self.current_machine_ix
             }
-            # If something is still writing, don't allow node to write
-            while True:
-                if (self.writing_enabled):
-                    break
-            self.writing_enabled = False
-            # Send response, saying that it is ok to write
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
+        }
+        # If something is still writing, don't allow node to write
+        while True:
+            if (self.writing_enabled):
+                break
+        self.writing_enabled = False
+        # Send response, saying that it is ok to write
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
     
     def handle_update_finish(self, update_finish):
-        with self.file_list_lock:
-            message_content = update_finish["update_finish"]
-            file_name = message_content["file_name"]
-            node_from = message_content["from"]
-            self.writing_enabled = True
-            print("Writing now enabled")
+        message_content = update_finish["update_finish"]
+        file_name = message_content["file_name"]
+        node_from = message_content["from"]
+        self.writing_enabled = True
+        print("Writing now enabled")
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
