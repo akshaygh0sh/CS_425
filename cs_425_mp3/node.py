@@ -85,7 +85,7 @@ class Server:
         self.gossipS = False
         # To keep track of when writing is enabled
         self.writing_enabled = True
-        self.writing_lock = threading.Lock()
+        self.writing_lock = threading.RLock()
 
     def get_info(self):
         try:
