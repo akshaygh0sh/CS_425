@@ -730,7 +730,7 @@ class Server:
                             "file_info" : file_info
                         }
                         for peer in peers:
-                            s.sendto(json.dumps(file_info).encode('utf-8'), tuple(peer, MESSAGE_PORT_NUM))
+                            s.sendto(json.dumps(file_info).encode('utf-8'), (peer, MESSAGE_PORT_NUM))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print("the exception is", e)
