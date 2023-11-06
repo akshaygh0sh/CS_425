@@ -87,6 +87,8 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
+        self.writing_lock = threading.RLock()
+        self.writing_locks = {}
 
     def get_info(self):
         try:
@@ -458,6 +460,15 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
+    def acquire_writing_lock(self, sdfs_file_name):
+        with self.writing_lock:
+            self.writing_lock[sdfs_file_name] = True
+        
+    def release_writing_lock(self, sdfs_file_name):
+        with self.writing_lock:
+            if (sdfs_file_name in self.writing_lock):
+                del self.writing_lock[sdfs_file_name]
+
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
         sdfs_file_name = message_content["file_name"]
@@ -471,14 +482,21 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
+        # Wait before satisfying the write request
+        while True:
+            if not (sdfs_file_name in self.writing_lock):
+                break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), MESSAGE_PORT_NUM))
+        self.acquire_writing_lock(sdfs_file_name)
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
         file_name = message_content["file_name"]
         node_from = message_content["from"]
+        # Got notification that sftp is done, enable writing again
+        self.release_writing_lock(file_name)
 
     def handle_update_response(self, update_response):
         with self.file_list_lock:
