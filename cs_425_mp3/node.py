@@ -88,7 +88,7 @@ class Server:
         self.enable_sending = True
         self.gossipS = False
         self.writing_lock = threading.RLock()
-        self.writing_locks = {}
+        self.writing_locks_dict = {}
 
     def get_info(self):
         try:
@@ -462,12 +462,12 @@ class Server:
 
     def acquire_writing_lock(self, sdfs_file_name):
         with self.writing_lock:
-            self.writing_lock[sdfs_file_name] = True
+            self.writing_locks_dict[sdfs_file_name] = True
         
     def release_writing_lock(self, sdfs_file_name):
         with self.writing_lock:
-            if (sdfs_file_name in self.writing_lock):
-                del self.writing_lock[sdfs_file_name]
+            if (sdfs_file_name in self.writing_locks_dict):
+                del self.writing_locks_dict[sdfs_file_name]
 
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
@@ -504,7 +504,7 @@ class Server:
             sdfs_file_name = message_content["file_name"]
             local_file_name = message_content["local_file_name"]
             node_from = message_content["from"]
-            self.upload_file(node_from, local_file_name, sdfs_file_name)
+            self.upload_file(node_from, local_file_name, sdfs_file_name) 
     
     def send_delete_request(self, filename):
         if (filename in self.file_info):
