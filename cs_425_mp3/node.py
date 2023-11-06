@@ -317,12 +317,11 @@ class Server:
     # Get set of nodes that aren't in membership list
     # return failed nodes, healthy nodes
     def get_failed_nodes(self):
-        with self.membership_lock:
-            healthy_nodes = list(self.membership_list.keys())
-            healthy_nodes = [self.ip_to_machine_id(key) for key in healthy_nodes]
-            healthy_nodes = set(healthy_nodes)
-            all_nodes = set(range(1, 11))
-            return all_nodes - healthy_nodes, healthy_nodes
+        healthy_nodes = list(self.membership_list.keys())
+        healthy_nodes = [self.ip_to_machine_id(key) for key in healthy_nodes]
+        healthy_nodes = set(healthy_nodes)
+        all_nodes = set(range(1, 11))
+        return all_nodes - healthy_nodes, healthy_nodes
 
     def print_membership_list(self):
         # Method to print the membership list to the log file and return it as a string.
@@ -764,7 +763,7 @@ class Server:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--protocol-period', type=float, help='Protocol period T in seconds', default=0.3)
+    parser.add_argument('-t', '--protocol-period', type=float, help='Protocol period T in seconds', default=0.33)
     parser.add_argument('-d', '--drop-rate', type=float,
                         help='The message drop rate',
                         default=0)
