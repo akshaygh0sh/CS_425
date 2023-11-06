@@ -484,7 +484,7 @@ class Server:
         }
         # Wait before satisfying the write request
         while True:
-            if not (sdfs_file_name in self.writing_lock):
+            if not (sdfs_file_name in self.writing_locks_dict):
                 break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
