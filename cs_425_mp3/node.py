@@ -224,48 +224,42 @@ class Server:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
     def suspect_nodes(self): 
-        # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
-        with self.membership_lock:
-            now = int(time.time())
-            # Calculate the threshold time
-            failure_threshold_time = now - self.failure_time_threshold
-            suspect_threshold_time = now - self.suspect_time_threshold
-            # Collect members to remove
-            suspect_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < failure_threshold_time and member_info["status"] != "Suspect"]
-            for member_id in suspect_members_detected:
-                self.membership_list[member_id]["status"] = "Suspect"
-                self.membership_list[member_id]["incarnation"] += 1
-                self.membership_list[member_id]["time"] = now
-                logger.info("[SUS]    - {}".format(member_id))
-                log_message = f"Detected      : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
-                print("log message is ", log_message)
-            fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < suspect_threshold_time and member_id not in self.failed_nodes and member_info['status'] == "Suspect"]
-            for member_id in fail_members_detected:
-                self.failed_nodes[member_id] = now
-                del self.membership_list[member_id]
-                logger.info("[DELETE] - {}".format(member_id))
+        now = int(time.time())
+        # Calculate the threshold time
+        failure_threshold_time = now - self.failure_time_threshold
+        suspect_threshold_time = now - self.suspect_time_threshold
+        # Collect members to remove
+        suspect_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < failure_threshold_time and member_info["status"] != "Suspect"]
+        for member_id in suspect_members_detected:
+            self.membership_list[member_id]["status"] = "Suspect"
+            self.membership_list[member_id]["incarnation"] += 1
+            self.membership_list[member_id]["time"] = now
+            logger.info("[SUS]    - {}".format(member_id))
+            log_message = f"Detected      : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
+            print("log message is ", log_message)
+        fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < suspect_threshold_time and member_id not in self.failed_nodes and member_info['status'] == "Suspect"]
+        for member_id in fail_members_detected:
+            self.failed_nodes[member_id] = now
+            del self.membership_list[member_id]
+            logger.info("[DELETE] - {}".format(member_id))
 
     def detect_failed_nodes(self):
-        # Method to detect and handle failed members in the membership list for the gossip protocol.
-        with self.membership_lock:
-            now = int(time.time())
-            # Calculate the threshold time
-            threshold_time = now - self.failure_time_threshold
-            # Collect members to remove
-            fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < threshold_time and member_id not in self.failed_nodes]
-            for member_id in fail_members_detected:
-                self.failed_nodes[member_id] = now
-                del self.membership_list[member_id]
-                logger.info("[DELETE] - {}".format(member_id))
+        now = int(time.time())
+        # Calculate the threshold time
+        threshold_time = now - self.failure_time_threshold
+        # Collect members to remove
+        fail_members_detected = [member_id for member_id, member_info in self.membership_list.items() if member_info['time'] < threshold_time and member_id not in self.failed_nodes]
+        for member_id in fail_members_detected:
+            self.failed_nodes[member_id] = now
+            del self.membership_list[member_id]
+            logger.info("[DELETE] - {}".format(member_id))
 
     def remove_failed_nodes(self):
-        # Remove the members from the failMembershipList
-        with self.membership_lock:
-            now = int(time.time())
-            threshold_time = now - self.cleanup_time_threshold
-            fail_members_to_remove = [member_id for member_id, fail_time in self.failed_nodes.items() if fail_time < threshold_time]
-            for member_id in fail_members_to_remove:
-                del self.failed_nodes[member_id]
+        now = int(time.time())
+        threshold_time = now - self.cleanup_time_threshold
+        fail_members_to_remove = [member_id for member_id, fail_time in self.failed_nodes.items() if fail_time < threshold_time]
+        for member_id in fail_members_to_remove:
+            del self.failed_nodes[member_id]
 
     def get_json_membership_list(self):
         # Method to generate a JSON representation of the server's membership information.
@@ -324,16 +318,14 @@ class Server:
             return all_nodes - healthy_nodes, healthy_nodes
 
     def print_membership_list(self):
-        # Method to print the membership list to the log file and return it as a string.
-        with self.membership_lock:
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_message = f"{timestamp} ==============================================================\n"
-            log_message += f" {str(self.failed_nodes)}\n"
-            for member_id, member_info in self.membership_list.items():
-                log_message += f"ID: {member_info['id']}, Heartbeat: {member_info['heartbeat']}, Status: {member_info['status']}, Incarnation:{member_info['incarnation']}, Time: {member_info['time']}\n"
-            with open('output.log', 'a') as log_file:
-                log_file.write(log_message)
-            return(log_message)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_message = f"{timestamp} ==============================================================\n"
+        log_message += f" {str(self.failed_nodes)}\n"
+        for member_id, member_info in self.membership_list.items():
+            log_message += f"ID: {member_info['id']}, Heartbeat: {member_info['heartbeat']}, Status: {member_info['status']}, Incarnation:{member_info['incarnation']}, Time: {member_info['time']}\n"
+        with open('output.log', 'a') as log_file:
+            log_file.write(log_message)
+        return(log_message)
 
     def select_gossip_targets(self):
         # Method to randomly choose members from the membership list to send messages to.
@@ -699,8 +691,8 @@ class Server:
                     if self.enable_sending:  # Check if sending is enabled
                         self.update_heartbeat()
                         peers = self.select_gossip_targets()
-                        mem_list = self.get_json_membership_list()
-                        file_info = self.get_json_file_list()
+                        mem_list = self.membership_list
+                        file_info = self.file_info
                             
                         mem_list = {
                             "membership_list" : mem_list
