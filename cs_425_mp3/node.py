@@ -83,7 +83,7 @@ class Server:
         # Incarnation number for handling suspicion.
         self.incarnation = 0
         # Thread-safe lock for synchronization.
-        self.membership_lock = threading.RLock()
+        self.membership_lock = threading.Lock()
         self.file_list_lock = threading.RLock()
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
