@@ -71,9 +71,9 @@ class Server:
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
-        self.failure_time_threshold = 7
-        self.cleanup_time_threshold = 7
-        self.suspect_time_threshold = 7
+        self.failure_time_threshold = 10
+        self.cleanup_time_threshold = 10
+        self.suspect_time_threshold = 10
         self.protocol_period = args.protocol_period
         # Number of times to send messages.
         self.n_send = 3
@@ -124,7 +124,7 @@ class Server:
         for file in stored_files:
             print(f"{file} stored at machine {self.current_machine_ix}")
 
-    def update_lists(self, data_list):
+    def update_membership_list(self, data_list):
         # Method to update the membership list of the server with received information.
         # Iterate through the received membership list.
         if "membership_list" in data_list:
@@ -171,7 +171,9 @@ class Server:
                             log_message = f"Newmem        : ID: {member_id}, Status: {self.membership_list[member_id]['status']}, Time: {self.membership_list[member_id]['time']}\n"
                             print("log message is ",  log_message)
                         logger.info("[JOIN]   - {}".format(member_id))
-        elif "file_info" in data_list:
+    
+    def update_file_list(self, data_list):
+       if "file_info" in data_list:
             with self.file_list_lock:
                 data_list = data_list["file_info"]
                 # Check each value in the file_info list, if the incoming heartbeat
@@ -358,7 +360,7 @@ class Server:
                             continue
                         else:
                             msgs = json.loads(data.decode('utf-8'))
-                            self.update_lists(msgs) 
+                            self.update_membership_list(msgs) 
                 except Exception as e:
                     print("exception ", e)
         
@@ -394,6 +396,8 @@ class Server:
                                 self.handle_delete_request(msgs)
                             elif ("delete_response" in msgs):
                                 self.handle_delete_response(msgs)
+                            else:
+                                self.update_file_list(msgs)
                 except Exception as e:
                     print("exception ", e)
     
