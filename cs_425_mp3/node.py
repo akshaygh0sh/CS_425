@@ -690,7 +690,7 @@ class Server:
             except Exception as e:
                 pass
 
-    def send(self, message = None):
+    def send_heartbeats(self, message = None):
         """
         A UDP sender for a node. It sends json message to random N nodes periodically
         and maintain time table for handling timeout issue.
@@ -703,17 +703,34 @@ class Server:
                         self.update_heartbeat()
                         peers = self.select_gossip_targets()
                         mem_list = self.membership_list
-                        file_info = self.get_json_file_list()
                             
                         mem_list = {
                             "membership_list" : mem_list
                         }
+
+                        for peer in peers:
+                            s.sendto(json.dumps(mem_list).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
+                    time.sleep(self.protocol_period)          
+                except Exception as e:
+                    print("the exception is", e)
+    
+    def send_fileheartbeats(self, message = None):
+        """
+        A UDP sender for a node. It sends json message to random N nodes periodically
+        and maintain time table for handling timeout issue.
+        :return: None
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            while True:
+                try:
+                    if self.enable_sending:  # Check if sending is enabled
+                        peers = self.select_gossip_targets()
+                        file_info = self.get_json_file_list()
                         file_info = {
                             "file_info" : file_info
                         }
                         for peer in peers:
-                            s.sendto(json.dumps(mem_list).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
-                            s.sendto(json.dumps(file_info).encode('utf-8'), tuple(self.membership_list[peer]['addr']))
+                            s.sendto(json.dumps(file_info).encode('utf-8'), tuple(peer, MESSAGE_PORT_NUM))
                     time.sleep(self.protocol_period)          
                 except Exception as e:
                     print("the exception is", e)
@@ -751,9 +768,13 @@ class Server:
         file_message_receiver_thread.start()
 
         # Start a sender thread
-        sender_thread = threading.Thread(target=self.send)
-        sender_thread.daemon = True
-        sender_thread.start()
+        heartbeat_sender_thread = threading.Thread(target=self.send_heartbeats)
+        heartbeat_sender_thread.daemon = True
+        heartbeat_sender_thread.start()
+
+        fileheartbeat_sender_thread = threading.Thread(target=self.send_fileheartbeats)
+        fileheartbeat_sender_thread.daemon = True
+        fileheartbeat_sender_thread.start()
 
         # Start a to update enable sending
         user_thread = threading.Thread(target=self.user_input)
@@ -762,7 +783,8 @@ class Server:
 
         heartbeat_receiver_thread.join()
         file_message_receiver_thread.join()
-        sender_thread.join()
+        heartbeat_sender_thread.join()
+        fileheartbeat_sender_thread.join()
         user_thread.join()
 
 if __name__ == "__main__":
