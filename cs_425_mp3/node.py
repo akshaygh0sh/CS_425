@@ -86,7 +86,7 @@ class Server:
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
-        self.writing_lock = threading.Lock()
+        self.writing_lock = threading.RLock()
         self.writing_locks_dict = {}
 
     def get_info(self):
