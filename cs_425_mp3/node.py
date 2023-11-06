@@ -71,9 +71,9 @@ class Server:
         # List to track failed members.
         self.failed_nodes = {}
         # Thresholds for various time-based criteria.
-        self.failure_time_threshold = 10
-        self.cleanup_time_threshold = 10
-        self.suspect_time_threshold = 10
+        self.failure_time_threshold = 5
+        self.cleanup_time_threshold = 5
+        self.suspect_time_threshold = 5
         self.protocol_period = args.protocol_period
         # Number of times to send messages.
         self.n_send = 3
@@ -216,7 +216,7 @@ class Server:
     def handle_replica_replacement(self, sdfs_file_name, original_location, new_locations):
         update_request = {
             "update_request" : {
-                "local_file_name" : f"files/{sdfs_file_name}",
+                "local_file_name" : f"files/{sdfs_file_name}", 
                 "file_name" : sdfs_file_name,
                 "from" : original_location
             }
