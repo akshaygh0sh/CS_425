@@ -220,7 +220,7 @@ class Server:
         file_location = new_locations
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
-                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
     def suspect_nodes(self): 
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
@@ -411,7 +411,7 @@ class Server:
             }
         }
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(update_finish).encode(), (target_machine, HEARTBEAT_PORT_NUM))
+            s.sendto(json.dumps(update_finish).encode(), (target_machine, MESSAGE_PORT_NUM))
 
 
     def get_original_location(self, file_name):
@@ -457,7 +457,7 @@ class Server:
             file_location = self.file_info[sdfs_file_name]["locations"] if sdfs_file_name in self.file_info else self.get_file_locations(sdfs_file_name)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
-                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
@@ -474,7 +474,7 @@ class Server:
         }
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), HEARTBEAT_PORT_NUM))
+            s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), MESSAGE_PORT_NUM))
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
@@ -500,7 +500,7 @@ class Server:
             }
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 for location in file_locations:
-                    s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
+                    s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
         else:
             print(f"Delete request for {filename} failed. File does not exist in distributed file system.")
 
@@ -526,7 +526,7 @@ class Server:
                 delete_response["delete_response"]["status"] = "failure"
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
+                s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), MESSAGE_PORT_NUM))
 
     def handle_delete_response(self, message):
         delete_response = message["delete_response"]
@@ -549,7 +549,7 @@ class Server:
                 }
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                     target_node = random.choice(file_locations)
-                    s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
+                    s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), MESSAGE_PORT_NUM))
 
     
     def send_get_request(self, sdfs_file_name):
@@ -563,7 +563,7 @@ class Server:
             }
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 target_node = random.choice(file_locations)
-                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
+                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), MESSAGE_PORT_NUM))
     
     def handle_get_request(self, get_message):
         with self.file_list_lock:
@@ -583,7 +583,7 @@ class Server:
                 get_response["get_response"]["status"] = "failure"
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))  
+                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), MESSAGE_PORT_NUM))  
     
     def handle_get_response(self, message):
         get_response = message["get_response"]
