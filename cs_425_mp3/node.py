@@ -460,6 +460,9 @@ class Server:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
+    def print_write_status(self):
+        print(self.writing_locks_dict)
+
     def acquire_writing_lock(self, sdfs_file_name):
         with self.writing_lock:
             self.writing_locks_dict[sdfs_file_name] = True
@@ -671,6 +674,8 @@ class Server:
                     file_name = info[1]
                     targets = [int(ix) for ix in info[2:]]
                     self.multi_read(file_name, targets)
+                elif user_input == 'write_status':
+                    self.print_write_status()
                 elif user_input.lower() == 'exit':
                     break
                 else:
