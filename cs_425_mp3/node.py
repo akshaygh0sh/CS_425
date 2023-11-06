@@ -83,7 +83,7 @@ class Server:
         self.incarnation = 0
         # Thread-safe lock for synchronization.
         self.membership_lock = threading.RLock()
-        self.file_list_lock = threading.Lock()
+        self.file_list_lock = threading.RLock()
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
@@ -269,29 +269,28 @@ class Server:
 
     def json(self):
         # Method to generate a JSON representation of the server's membership information.
-        with self.membership_lock:
-            if self.gossipS:
-            # If using GossipS protocol, include additional information like status and incarnation.
-                return {
-                    m['id']:{
-                        'id': m['id'],
-                        'addr': m['addr'],
-                        'heartbeat': m['heartbeat'] ,
-                        'status': m['status'],
-                        'incarnation': m['incarnation']
-                    }
-                    for m in self.membership_list.values()
-                }, self.file_info
-            else:
-            # If not using GossipS protocol, include basic information like ID, address, and heartbeat.
-                return {
-                    m['id']:{
-                        'id': m['id'],
-                        'addr': m['addr'],
-                        'heartbeat': m['heartbeat'] ,
-                    }
-                    for m in self.membership_list.values()
-                }, self.file_info
+        if self.gossipS:
+        # If using GossipS protocol, include additional information like status and incarnation.
+            return {
+                m['id']:{
+                    'id': m['id'],
+                    'addr': m['addr'],
+                    'heartbeat': m['heartbeat'] ,
+                    'status': m['status'],
+                    'incarnation': m['incarnation']
+                }
+                for m in self.membership_list.values()
+            }, self.file_info
+        else:
+        # If not using GossipS protocol, include basic information like ID, address, and heartbeat.
+            return {
+                m['id']:{
+                    'id': m['id'],
+                    'addr': m['addr'],
+                    'heartbeat': m['heartbeat'] ,
+                }
+                for m in self.membership_list.values()
+            }, self.file_info
           
     def ip_to_machine_id(self, ip):
         ip = ip.split(':')[0]
