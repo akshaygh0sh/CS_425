@@ -83,11 +83,11 @@ class Server:
         self.incarnation = 0
         # Thread-safe lock for synchronization.
         self.membership_lock = threading.RLock()
-        self.file_list_lock = threading.RLock()
+        self.file_list_lock = threading.Lock()
         # Flag to enable or disable message sending for leaving group and enable and disable suspicion mechanisism
         self.enable_sending = True
         self.gossipS = False
-        self.writing_lock = threading.RLock()
+        self.writing_lock = threading.Lock()
         self.writing_locks_dict = {}
 
     def get_info(self):
@@ -461,7 +461,7 @@ class Server:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), MESSAGE_PORT_NUM))
 
     def print_write_status(self):
-        print(self.writing_locks_dict)
+        print(self.writing_locks_dict) 
 
     def acquire_writing_lock(self, sdfs_file_name):
         with self.writing_lock:
