@@ -494,6 +494,8 @@ class Server:
         timeout = 0
         while True:
             if not (sdfs_file_name in self.writing_locks_dict):
+                break
+            else:
                 time.sleep(0.1)
                 timeout+=0.1
                 if (timeout > 5):
