@@ -491,16 +491,16 @@ class Server:
             }
         }
         # Wait before satisfying the write request
-        timeout = 0
+        # timeout = 0
         while True:
             if not (sdfs_file_name in self.writing_locks_dict):
                 break
-            else:
-                time.sleep(0.1)
-                timeout+=0.1
-                if (timeout > 15):
-                    self.release_writing_lock(sdfs_file_name)
-                    break
+            # else:
+            #     time.sleep(0.1)
+            #     timeout+=0.1
+            #     if (timeout > 15):
+            #         self.release_writing_lock(sdfs_file_name)
+            #         break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), MESSAGE_PORT_NUM))
