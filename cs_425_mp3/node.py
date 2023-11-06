@@ -434,11 +434,12 @@ class Server:
         file_locations = self.get_file_locations(sdfs_file_name)
         local_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/{local_file_name}"
         sdfs_file_path = f"/home/{self.username}/CS_425/cs_425_mp3/files/{sdfs_file_name}"
-        # Send update request to necessary nodes
-        self.file_info[sdfs_file_name] = {
-                "heartbeat" : self.file_info[sdfs_file_name]['heartbeat'] + 1 if sdfs_file_name in self.file_info else 1,
-                "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
-        }  
+        with self.file_list_lock:
+            # Send update request to necessary nodes
+            self.file_info[sdfs_file_name] = {
+                    "heartbeat" : self.file_info[sdfs_file_name]['heartbeat'] + 1 if sdfs_file_name in self.file_info else 1,
+                    "locations" : self.file_info[sdfs_file_name]['locations'] if sdfs_file_name in self.file_info else file_locations
+            }  
         target_machine = self.index_to_ip(target_machine_ix)
         self.send_file(target_machine, local_file_path, sdfs_file_path)
             
@@ -452,7 +453,8 @@ class Server:
                 "from" : self.current_machine_ix
             }
         }
-        file_location = self.file_info[sdfs_file_name]["locations"] if sdfs_file_name in self.file_info else self.get_file_locations(sdfs_file_name)
+        with self.file_list_lock:
+            file_location = self.file_info[sdfs_file_name]["locations"] if sdfs_file_name in self.file_info else self.get_file_locations(sdfs_file_name)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
                 s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
