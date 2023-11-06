@@ -10,8 +10,6 @@ import argparse
 import hashlib
 import base64
 import paramiko
-import queue
-from concurrent.futures import ThreadPoolExecutor
 
 # Define a list of host names that represent nodes in the distributed system.
 # These host names are associated with specific machines in the network.
@@ -493,9 +491,14 @@ class Server:
             }
         }
         # Wait before satisfying the write request
+        timeout = 0
         while True:
             if not (sdfs_file_name in self.writing_locks_dict):
-                break
+                time.sleep(0.1)
+                timeout+=0.1
+                if (timeout > 5):
+                    self.release_writing_lock(sdfs_file_name)
+                    break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), MESSAGE_PORT_NUM))
@@ -577,7 +580,6 @@ class Server:
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                     target_node = random.choice(file_locations)
                     s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), MESSAGE_PORT_NUM))
-
     
     def send_get_request(self, sdfs_file_name):
         if (sdfs_file_name in self.file_info):
