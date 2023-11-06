@@ -732,6 +732,7 @@ class Server:
         user_thread.start()
 
         heartbeat_receiver_thread.join()
+        file_message_receiver_thread.join()
         sender_thread.join()
         user_thread.join()
 
