@@ -498,7 +498,7 @@ class Server:
             else:
                 time.sleep(0.1)
                 timeout+=0.1
-                if (timeout > 5):
+                if (timeout > 15):
                     self.release_writing_lock(sdfs_file_name)
                     break
         # Send response, saying that it is ok to write
