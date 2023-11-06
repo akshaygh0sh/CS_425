@@ -709,7 +709,7 @@ class Server:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--protocol-period', type=float, help='Protocol period T in seconds', default=0.25)
+    parser.add_argument('-t', '--protocol-period', type=float, help='Protocol period T in seconds', default=0.1)
     parser.add_argument('-d', '--drop-rate', type=float,
                         help='The message drop rate',
                         default=0)
