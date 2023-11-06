@@ -580,59 +580,62 @@ class Server:
         self.username = input("What is your username: ")
         self.password = input("What is your password: ")
         while True:
-            user_input = input("Enter command: (or 'exit' to terminate): ")
-            if user_input == 'join':
-                self.enable_sending = True
-                print("Starting to send messages.")
-                self.membership_list = {
-                f"{ip}:{port}:{self.timejoin}": {
-                    "id": f"{ip}:{port}:{self.timejoin}",
-                    "addr": (ip, port),
-                    "heartbeat": 0,
-                    "status": "Alive",
-                    "incarnation": 0,
-                    "time": time.time(),
-                }
-                for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
-            }    
-            elif user_input == 'leave':
-                self.enable_sending = False
-                print("Leaving the group.")
-            elif user_input == 'enable suspicion':
-                self.gossipS = True
-                print("Starting gossip S.")
-            elif user_input == 'disable suspicion':
-                self.gossipS = False
-                print("Stopping gossip S.")
-            elif user_input == 'list_mem':
-                print(self.print_membership_list())
-            elif user_input == 'list_file':    
-                self.print_file_info()
-            elif user_input == 'list_self':
-                self.print_id()
-            elif user_input.startswith('put'):
-                info = user_input.split(sep = ' ')
-                self.send_update_request(info[1], info[2])
-            elif user_input.startswith('get'):
-                info = user_input.split(sep = ' ')
-                self.send_get_request(info[1])
-            elif user_input.startswith('delete'):
-                info = user_input.split(sep = ' ')
-                self.send_delete_request(info[1])
-            elif user_input.startswith('ls '):
-                info = user_input.split(sep = ' ')
-                self.ls_files(info[1])
-            elif user_input == 'store':
-                self.store()
-            elif user_input.startswith('multiread'):
-                info = user_input.split(sep = ' ')
-                file_name = info[1]
-                targets = [int(ix) for ix in info[2:]]
-                self.multi_read(file_name, targets)
-            elif user_input.lower() == 'exit':
-                break
-            else:
-                print("Invalid input.")
+            try:
+                user_input = input("Enter command: (or 'exit' to terminate): ")
+                if user_input == 'join':
+                    self.enable_sending = True
+                    print("Starting to send messages.")
+                    self.membership_list = {
+                    f"{ip}:{port}:{self.timejoin}": {
+                        "id": f"{ip}:{port}:{self.timejoin}",
+                        "addr": (ip, port),
+                        "heartbeat": 0,
+                        "status": "Alive",
+                        "incarnation": 0,
+                        "time": time.time(),
+                    }
+                    for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
+                }    
+                elif user_input == 'leave':
+                    self.enable_sending = False
+                    print("Leaving the group.")
+                elif user_input == 'enable suspicion':
+                    self.gossipS = True
+                    print("Starting gossip S.")
+                elif user_input == 'disable suspicion':
+                    self.gossipS = False
+                    print("Stopping gossip S.")
+                elif user_input == 'list_mem':
+                    print(self.print_membership_list())
+                elif user_input == 'list_file':    
+                    self.print_file_info()
+                elif user_input == 'list_self':
+                    self.print_id()
+                elif user_input.startswith('put'):
+                    info = user_input.split(sep = ' ')
+                    self.send_update_request(info[1], info[2])
+                elif user_input.startswith('get'):
+                    info = user_input.split(sep = ' ')
+                    self.send_get_request(info[1])
+                elif user_input.startswith('delete'):
+                    info = user_input.split(sep = ' ')
+                    self.send_delete_request(info[1])
+                elif user_input.startswith('ls '):
+                    info = user_input.split(sep = ' ')
+                    self.ls_files(info[1])
+                elif user_input == 'store':
+                    self.store()
+                elif user_input.startswith('multiread'):
+                    info = user_input.split(sep = ' ')
+                    file_name = info[1]
+                    targets = [int(ix) for ix in info[2:]]
+                    self.multi_read(file_name, targets)
+                elif user_input.lower() == 'exit':
+                    break
+                else:
+                    print("Invalid input.")
+            except Exception as e:
+                pass
 
     def send(self, message = None):
         """
