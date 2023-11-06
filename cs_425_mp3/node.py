@@ -114,13 +114,12 @@ class Server:
             print("File not found in SDFS")
     
     def store(self):
-        with self.file_list_lock:
-            stored_files = []
-            for key in self.file_info:
-                if (self.current_machine_ix in self.file_info[key]["locations"]):
-                    stored_files.append(key)
-            for file in stored_files:
-                print(f"{file} stored at machine {self.current_machine_ix}")
+        stored_files = []
+        for key in self.file_info:
+            if (self.current_machine_ix in self.file_info[key]["locations"]):
+                stored_files.append(key)
+        for file in stored_files:
+            print(f"{file} stored at machine {self.current_machine_ix}")
 
     def update_lists(self, data_list):
         # Method to update the membership list of the server with received information.
@@ -594,8 +593,7 @@ class Server:
             print(f"Error when attempting to fetch contents of {file_name}")
     
     def print_file_info(self):
-        with self.file_list_lock:
-            print("the info list is ", self.file_info)
+        print("the info list is ", self.file_info)
 
     def user_input(self):
         """
