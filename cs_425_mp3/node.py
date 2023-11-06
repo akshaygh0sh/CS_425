@@ -499,7 +499,8 @@ class Server:
                 time.sleep(0.1)
                 timeout+=0.1
                 if (timeout > 15):
-                    self.release_writing_lock(sdfs_file_name)
+                    with self.writing_lock:
+                        self.writing_locks_dict = {}
                     break
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
