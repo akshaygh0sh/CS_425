@@ -32,7 +32,8 @@ HOST_NAME_LIST = [
 Introducor = 'fa23-cs425-5601.cs.illinois.edu'
 
 # 'DEFAULT_PORT_NUM' defines the default port number used for communication within the system.
-DEFAULT_PORT_NUM = 12360
+HEARTBEAT_PORT_NUM = 12360
+MESSAGE_PORT_NUM = 12361
 
 # Configure logging for the script. This sets up a logging system that records debug information
 # to the 'output.log' file, including timestamps and log levels.
@@ -47,11 +48,13 @@ class Server:
     def __init__(self,args):
         # Initialize the server with various attributes.
         self.ip, self.current_machine_ix,  = self.get_info()
-        self.port = DEFAULT_PORT_NUM
+        self.heartbeat_port = HEARTBEAT_PORT_NUM
+        self.message_port = MESSAGE_PORT_NUM
         self.heartbeat = 0
         self.timejoin = int(time.time())
-        self.id = f"{self.ip}:{self.port}:{self.timejoin}"
-        self.addr = (self.ip, self.port)
+        self.id = f"{self.ip}:{self.heartbeat_port}:{self.timejoin}"
+        self.heartbeat_addr = (self.ip, self.heartbeat_port)
+        self.message_addr = (self.ip, self.message_port)
         self.membership_list = {
                 f"{ip}:{port}:{self.timejoin}": {
                 "id": f"{ip}:{port}:{self.timejoin}",
@@ -61,7 +64,7 @@ class Server:
                 "status": "Alive",
                 "time": time.time(), 
             }
-            for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
+            for ip, port in [(IP, HEARTBEAT_PORT_NUM) for IP in [self.ip, Introducor]]
         }
         self.file_info = {}
         # List to track failed members.
@@ -217,7 +220,7 @@ class Server:
         file_location = new_locations
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
-                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
 
     def suspect_nodes(self): 
         # Method to detect and handle suspected and failed members in the membership list for the gossip S protocol.
@@ -333,13 +336,35 @@ class Server:
             candidates = list(self.membership_list.keys())
             return candidates
 
-    def receive(self):
+    def receive_heartbeats(self):
         """
         A server's receiver is respnsible to receive all gossip UDP message:
         :return: None
         """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.bind(self.addr)
+            s.bind(self.heartbeat_addr)
+            while True:
+                try:
+                    # UDP receiver
+                    data, server = s.recvfrom(4096)
+                    # * if receives data
+                    if data:
+                        if random.random() < self.drop_rate:
+                            continue
+                        else:
+                            msgs = json.loads(data.decode('utf-8'))
+                            self.update_lists(msgs) 
+                except Exception as e:
+                    print("exception ", e)
+        
+
+    def receive_messages(self):
+        """
+        A server's receiver is respnsible to receive all gossip UDP message related to file commands:
+        :return: None
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.bind(self.message_addr)
             while True:
                 try:
                     # UDP receiver
@@ -364,8 +389,6 @@ class Server:
                                 self.handle_delete_request(msgs)
                             elif ("delete_response" in msgs):
                                 self.handle_delete_response(msgs)
-                            else:
-                                self.update_lists(msgs) 
                 except Exception as e:
                     print("exception ", e)
     
@@ -388,7 +411,7 @@ class Server:
             }
         }
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(update_finish).encode(), (target_machine, DEFAULT_PORT_NUM))
+            s.sendto(json.dumps(update_finish).encode(), (target_machine, HEARTBEAT_PORT_NUM))
 
 
     def get_original_location(self, file_name):
@@ -432,7 +455,7 @@ class Server:
         file_location = self.file_info[sdfs_file_name]["locations"] if sdfs_file_name in self.file_info else self.get_file_locations(sdfs_file_name)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             for location in file_location:
-                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+                s.sendto(json.dumps(update_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
 
     def handle_update_request(self, update_request):
         message_content = update_request["update_request"]
@@ -449,7 +472,7 @@ class Server:
         }
         # Send response, saying that it is ok to write
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), DEFAULT_PORT_NUM))
+            s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), HEARTBEAT_PORT_NUM))
 
     def handle_update_finish(self, update_finish):
         message_content = update_finish["update_finish"]
@@ -475,7 +498,7 @@ class Server:
             }
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 for location in file_locations:
-                    s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), DEFAULT_PORT_NUM))
+                    s.sendto(json.dumps(delete_request).encode(), (self.index_to_ip(location), HEARTBEAT_PORT_NUM))
         else:
             print(f"Delete request for {filename} failed. File does not exist in distributed file system.")
 
@@ -501,7 +524,7 @@ class Server:
                 delete_response["delete_response"]["status"] = "failure"
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+                s.sendto(json.dumps(delete_response).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
 
     def handle_delete_response(self, message):
         delete_response = message["delete_response"]
@@ -524,7 +547,7 @@ class Server:
                 }
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                     target_node = random.choice(file_locations)
-                    s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+                    s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
 
     
     def send_get_request(self, sdfs_file_name):
@@ -538,7 +561,7 @@ class Server:
             }
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 target_node = random.choice(file_locations)
-                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))
+                s.sendto(json.dumps(get_request).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))
     
     def handle_get_request(self, get_message):
         with self.file_list_lock:
@@ -558,7 +581,7 @@ class Server:
                 get_response["get_response"]["status"] = "failure"
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), DEFAULT_PORT_NUM))  
+                s.sendto(json.dumps(get_response).encode(), (self.index_to_ip(target_node), HEARTBEAT_PORT_NUM))  
     
     def handle_get_response(self, message):
         get_response = message["get_response"]
@@ -594,7 +617,7 @@ class Server:
                         "incarnation": 0,
                         "time": time.time(),
                     }
-                    for ip, port in [(IP, DEFAULT_PORT_NUM) for IP in [self.ip, Introducor]]
+                    for ip, port in [(IP, HEARTBEAT_PORT_NUM) for IP in [self.ip, Introducor]]
                 }    
                 elif user_input == 'leave':
                     self.enable_sending = False
@@ -688,9 +711,13 @@ class Server:
 
         :return: None
         """
-        receiver_thread = threading.Thread(target=self.receive)
-        receiver_thread.daemon = True
-        receiver_thread.start()
+        heartbeat_receiver_thread = threading.Thread(target=self.receive_heartbeats)
+        heartbeat_receiver_thread.daemon = True
+        heartbeat_receiver_thread.start()
+
+        file_message_receiver_thread = threading.Thread(target=self.receive_messages)
+        file_message_receiver_thread.daemon = True
+        file_message_receiver_thread.start()
 
         # Start a sender thread
         sender_thread = threading.Thread(target=self.send)
@@ -702,8 +729,7 @@ class Server:
         user_thread.daemon = True
         user_thread.start()
 
-
-        receiver_thread.join()
+        heartbeat_receiver_thread.join()
         sender_thread.join()
         user_thread.join()
 
