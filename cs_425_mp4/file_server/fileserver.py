@@ -6,14 +6,14 @@ import sys
 import random
 import json
 from collections import Counter, deque, defaultdict
-sys.path.insert(0, '../server')
+sys.path.insert(0, './server')
 from server import FailDetector
 
 #########hard code area
 server_nums = [i for i in range(1, 11)]
-host_name = 'fa23-cs425-63{}.cs.illinois.edu'
-machine_2_ip = {i: 'fa23-cs425-63{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
-machine_2_ip[10] = 'fa23-cs425-6310.cs.illinois.edu'                                            #host domain name of machine 10
+host_name = 'fa23-cs425-56{}.cs.illinois.edu'
+machine_2_ip = {i: 'fa23-cs425-56{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
+machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                                            #host domain name of machine 10
 msg_format = 'utf-8'                #data encoding format of socket programming
 filelocation_list = {} # sdfs_filename: [ips which have this file]
 host_domain_name = socket.gethostname() 
@@ -24,7 +24,7 @@ file_leader_port = 5009
 file_sockets = {}
 leader_queue = list()
 schedule_counter = defaultdict(lambda : [0,0,0,0]) # schedule_counter = {'sdfsfilename':[R_count, W_count, R_pre, W_pre]}
-mp3_log_path = '/home/vfchen2/MP3_log'
+mp4_log_path = '/home/aaghosh2/MP4_log'
 put_ack = defaultdict(list)
 delete_ack = defaultdict(list)
 #########
@@ -33,7 +33,7 @@ fail_detector = FailDetector()
 
 class logging():
     def __init__(self):
-        with open(mp3_log_path, 'w+') as fd:
+        with open(mp4_log_path, 'w+') as fd:
             #create an empty log file
             pass
     def info(self, log):
@@ -46,7 +46,7 @@ class logging():
     def writelog(self, log, stdout=True):
         if stdout:
             print("[LOGGING WRITE {}]: {}".format(datetime.datetime.now(), log))
-        with open(mp3_log_path, 'a+') as fd:
+        with open(mp4_log_path, 'a+') as fd:
             print("[LOGGING WRITE {}]: {}".format(datetime.datetime.now(), log), file = fd)
         #self.fd.write(log)
 
@@ -115,7 +115,7 @@ def put_file(http_packet):
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
     print(f"From {str(source)} to {str(host_domain_name)} for {str(sdfs)}")
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null vfchen2@{source}:{local} /home/vfchen2/MP3_FILE/{sdfs}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP4_FILE/{sdfs}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -139,7 +139,7 @@ def get_file(http_packet):
     local = http_packet['local_filename']
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/vfchen2/MP3_FILE/{sdfs} vfchen2@{source}:{local}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -158,7 +158,7 @@ def delete_file(http_packet):
         This function deletes the file at current SDFS folder (4 servers executed)
     """
     sdfs = http_packet['sdfs_filename']
-    cmd = f'rm /home/vfchen2/MP3_FILE/{sdfs}'
+    cmd = f'rm /home/aaghosh2/MP4_FILE/{sdfs}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -440,7 +440,7 @@ def rereplicate():
                             http_packet = {}
                             http_packet['task_id'] = host_domain_name + '_'+str(datetime.datetime.now())  
                             http_packet['sdfs_filename'] = sdfs_filename
-                            http_packet['local_filename'] = '/home/vfchen2/MP3_FILE/' + sdfs_filename
+                            http_packet['local_filename'] = '/home/aaghosh2/MP4_FILE/' + sdfs_filename
                             http_packet['request_type'] = "put"
                             # If request_type == 'put': user input put localfilename, sdfs_filename, source == user host_domain, replica_ips == destination
                             http_packet['request_source'] = replica_source
@@ -514,17 +514,17 @@ def send2Leader(request_type, sdfs_filename, local_filename = None, host_domain_
 def clean_local_sdfs_dir():
     try:
         # init sdfs
-        cmd = 'rm -rf /home/vfchen2/MP3_FILE'
+        cmd = 'rm -rf /home/aaghosh2/MP4_FILE'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully remove sdfs directory")
-        cmd = 'mkdir -p /home/vfchen2/MP3_FILE'
+        cmd = 'mkdir -p /home/aaghosh2/MP4_FILE'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create sdfs directory")
         # init local to get files from sdfs
-        cmd = 'rm -rf /home/vfchen2/MP3_LOCAL'
+        cmd = 'rm -rf /home/aaghosh2/MP4_LOCAL'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully remove local directory")
-        cmd = 'mkdir -p /home/vfchen2/MP3_LOCAL'
+        cmd = 'mkdir -p /home/aaghosh2/MP4_LOCAL'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create local directory")
     except Exception as e:
@@ -597,7 +597,7 @@ if __name__ == "__main__":
             
             elif request_type.lower() == 'multiread': # multiread sdfs_filename 2 7
                 sdfs_filename, m = user_input.split(' ')[1], user_input.split(' ')[2]
-                local_filename = f'/home/vfchen2/MP3_LOCAL/{sdfs_filename}'
+                local_filename = f'/home/aaghosh2/MP4_LOCAL/{sdfs_filename}'
                 mems = list(fail_detector.membership_list.keys())
                 random_vms = random.sample(mems, k = int(m))
                 print(f"Target VMS: {str(random_vms)}")

@@ -1,10 +1,10 @@
-# MP2
+# MP4
 
 ## Name
-MP3 Team 63
+MP4 Team 56
 
 ## Description
-This is the repository for MP3 by Team 63. There are two main components for MP3, failure detector(MP2) and file server(MP3).
+This is the repository for MP3 by Team 56. There are two main components for MP3, failure detector(MP2) and file server(MP3).
 1. Failure detector: servers would perform gossiping to communicate information of servers status (Join, Failure, Suspicion). Server would maintain local membership list.
 2. Introducer: introducer always runs on VM1, and everytime a new join server need to request current membership list from the introducer.
 3. File server: Handle requests (put, get, delete) and send back "ack" when jobs are finished.
@@ -14,13 +14,12 @@ This is the repository for MP3 by Team 63. There are two main components for MP3
 To run the file server and introducer, followings are required in the environment:
 Python 3.6.8 ,other enviromental details should be same as VMs provided by the course
 
-
 ## Usage
 For running servers, cd to the file_server/ and run
 ```
 python3 fileserver.py
 ```
-and the termianl would output
+and the terminal would output
 ```
 Please Enter message for SDFS:
 ```
@@ -36,10 +35,3 @@ For running introducer, cd to the introducer and run
 ```
 python3 introducer.py
 ```
-
-## Support
-For any questions of running the repo, please reach out to vfchen2@illinois.edu or jy75@illinois.edu
-
-
-## Contributing (Authors)
-Jen-Chieh Yang (jy75), Vincent Chen (vfchen2)

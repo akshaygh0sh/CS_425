@@ -59,9 +59,9 @@ class Client():
             return str(-1)
 
 ### MODIFY ACCORDINGLY TO SERVER ###
-host_name = 'fa23-cs425-63{}.cs.illinois.edu'
-machine_2_ip = {i: 'fa23-cs425-63{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}   #host domain names of machnine 1~9 
-machine_2_ip[10] = 'fa23-cs425-6310.cs.illinois.edu'                                           #host domain name of machine 10
+host_name = 'fa23-cs425-56{}.cs.illinois.edu'
+machine_2_ip = {i: 'fa23-cs425-56{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}   #host domain names of machnine 1~9 
+machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                                           #host domain name of machine 10
 port = 5001
 filename = 'MP1/logs/vm{}.log' #log file path name format will be server ID
 

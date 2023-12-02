@@ -14,12 +14,11 @@ from collections import Counter, deque
 
 #########hard code area
 server_nums = [i for i in range(1, 11)]
-host_name = 'fa23-cs425-63{}.cs.illinois.edu'
-machine_2_ip = {i: 'fa23-cs425-63{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
-machine_2_ip[10] = 'fa23-cs425-6310.cs.illinois.edu'                                            #host domain name of machine 10
-root = '/home/vfchen2/MP1/logs/'    #log file path name 
-# mp2_log_path = '/home/vfchen2/mp2_server_log'
-mp2_log_path = '/home/vfchen2/mp2_server_log'
+host_name = 'fa23-cs425-56{}.cs.illinois.edu'
+machine_2_ip = {i: 'fa23-cs425-56{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
+machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                                            #host domain name of machine 10
+root = '/home/aaghosh2/MP1/logs/'    #log file path name 
+mp2_log_path = '/home/aaghosh2/mp2_server_log'
 msg_format = 'utf-8'                #data encoding format of socket programming
 logs = [root]                       #if need to handle multi log files on a single machine
 gossiping_sockets = {}   #record all socket for gossiping
@@ -80,12 +79,11 @@ class FailDetector():
         #########hard code area
         self.logger = logging()
         self.server_nums = [i for i in range(1, 11)]
-        self.host_name = 'fa23-cs425-63{}.cs.illinois.edu'
-        self.machine_2_ip = {i: 'fa23-cs425-63{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
-        self.machine_2_ip[10] = 'fa23-cs425-6310.cs.illinois.edu'                                            #host domain name of machine 10
-        self.root = '/home/vfchen2/MP1/logs/'    #log file path name 
-        # mp2_log_path = '/home/vfchen2/mp2_server_log'
-        self.mp2_log_path = '/home/jy75/mp2_server_log'
+        self.host_name = 'fa23-cs425-56{}.cs.illinois.edu'
+        self.machine_2_ip = {i: 'fa23-cs425-56{}.cs.illinois.edu'.format('0'+str(i)) for i in range(1, 10)}  #host domain names of machnine 1~9
+        self.machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                                            #host domain name of machine 10
+        self.root = '/home/aaghosh2/MP1/logs/'    #log file path name 
+        self.mp2_log_path = '/home/aaghosh2/mp2_server_log'
         self.msg_format = 'utf-8'                #data encoding format of socket programming
         self.logs = [root]                       #if need to handle multi log files on a single machine
         self.gossiping_sockets = {}   #record all socket for gossiping
