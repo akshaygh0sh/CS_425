@@ -7,6 +7,7 @@ import random
 import json
 from collections import Counter, deque, defaultdict
 import os
+import paramiko
 sys.path.insert(0, './server')
 from server import FailDetector
 
@@ -106,7 +107,7 @@ def send(http_packet, request_type, to_leader, replica_ips=None):
     else:
         leader_id = min(fail_detector.membership_list.keys())
         send_packet(leader_id, http_packet, file_leader_port, request_type)
-    
+
 
 def put_file(http_packet):
     """
@@ -119,7 +120,7 @@ def put_file(http_packet):
         
     try:
         print("Local file:", local, " sdfs file:", sdfs)
-        cmd = f'scp {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
+        cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
         # Shard file (for Map reduce)
         with open(f"/home/aaghosh2/MP4_FILE/{sdfs}", "r") as original_file:
@@ -139,7 +140,7 @@ def put_file(http_packet):
 
             print("Test")
             # Store shards
-            cmd = f'scp {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
+            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
             # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
 
@@ -164,7 +165,7 @@ def get_file(http_packet):
     local = http_packet['local_filename']
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
-    cmd = f'scp /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:/home/aaghosh2/MP4_LOCAL/{local}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:/home/aaghosh2/MP4_LOCAL/{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
