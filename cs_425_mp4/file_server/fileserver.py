@@ -601,6 +601,7 @@ def sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_
         http_packet_bytes = json.dumps(http_packet)
         http_packet_bytes = http_packet_bytes.encode(msg_format)
         send_packet(target, http_packet_bytes, file_receiver_port, 'juice')
+        print("Finish sending juice request")
 
 
 def handleMapleRequest(http_packet):
@@ -665,8 +666,10 @@ def handleJuiceRequest(http_packet):
                 response_packet = json.dumps(response_packet)
                 response_packet = response_packet.encode(msg_format)
                 send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "juice_response")
+                print("Finish handling juice request")
             else:
                 handleJuiceResponse(response_packet)
+                print("Finish handling juice request")
         except Exception as e:
             logger.error(f"init local/sdfs dir error: {str(e)}")
 
@@ -815,7 +818,7 @@ if __name__ == "__main__":
 
             elif request_type.lower() == 'juice':
                 juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
-                delete_input = user_input.split(' ')[5]
+                delete_input = bool(user_input.split(' ')[5])
                 sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_dir, delete_input)
 
             elif request_type.lower() == 'ls':
