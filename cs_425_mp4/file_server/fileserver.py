@@ -580,6 +580,8 @@ def handleMapleRequest(http_packet):
         response_packet['maple_results'] = keys_json
         response_packet['maple_source'] = maple_id
         response_packet['task_id'] = task_id
+        response_packet = json.dumps(response_packet)
+        response_packet = response_packet.encode(msg_format)
         # Send results back to leader
         send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, request_type)
     except Exception as e:
