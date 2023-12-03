@@ -646,6 +646,10 @@ def clean_local_sdfs_dir():
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully remove sdfs directory")
         cmd = 'mkdir -p /home/aaghosh2/MP3_FILE'
+        cmd = 'rm -rf /home/aaghosh2/CS_425/cs_425_mp4/maple_files'
+        result = subprocess.check_output(cmd, shell=True)
+        logger.info("successfully remove sdfs directory")
+        cmd = 'mkdir -p /home/aaghosh2/CS_425/cs_425_mp4/maple_files'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create sdfs directory")
         # init local to get files from sdfs
