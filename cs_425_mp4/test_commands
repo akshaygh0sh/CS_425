@@ -1,4 +1,5 @@
 This is a test, does this work?
 
-maple ./dist/word_count_map 2 fdsa test.txt
 put /home/aaghosh2/CS_425/cs_425_mp4/test_commands test.txt
+maple ./dist/word_count_map 2 fdsa test.txt
+juice ./dist/word_count_reduce 2 fdsa juice_output.txt True

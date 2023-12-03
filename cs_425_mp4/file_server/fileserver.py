@@ -588,7 +588,7 @@ def sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_
     
     matching_files = getAllFiles(sdfs_intermediate_prefix, num_juices)
     juice_queue[http_packet['task_id']] = {
-        "pending_workers" : list(range(1, num_maples + 1)),
+        "pending_workers" : list(range(1, num_juices + 1)),
         "accumulated_results" : "",
         "sdfs_dest_filename" : sdfs_dest_dir,
         "delete_input" : delete_input
