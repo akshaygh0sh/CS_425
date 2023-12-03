@@ -134,7 +134,7 @@ def put_file(http_packet):
         
         LINES_PER_SHARD = 100
         total_lines = len(lines)
-        num_shards = (total_lines + LINES_PER_SHARD - 1) // LINES_PER_SHARD
+        num_shards = (total_lines // LINES_PER_SHARD) + 1
 
         for shard_num in range(num_shards):
             start_index = shard_num * LINES_PER_SHARD
