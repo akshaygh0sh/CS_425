@@ -557,7 +557,7 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
 def handleMapleRequest(http_packet):
     maple_exe = http_packet['maple_exe']
     map_file = http_packet['map_file']
-    maple_id = http_packet['maple_id']
+    maple_id = int(http_packet['maple_id'])
     num_maples = int(http_packet['num_maples'])
     task_id =  http_packet['task_id']
     # Download file, and start processing
