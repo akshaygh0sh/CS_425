@@ -79,40 +79,40 @@ def send(http_packet, request_type, to_leader, replica_ips=None):
     """
         This function handles sends based on different request types/number of destinations
     """
-    http_packet = json.dumps(http_packet)
-    http_packet = http_packet.encode(msg_format)
+    http_packet_bytes = json.dumps(http_packet)
+    http_packet_bytes = http_packet_bytes.encode(msg_format)
 
     if not to_leader:
 
         if request_type in ['put', 'delete']:
             for dest in replica_ips:
-                send_packet(dest, http_packet, file_receiver_port, request_type)
+                send_packet(dest, http_packet_bytes, file_receiver_port, request_type)
 
         elif request_type == 'maple':
             num_maples = http_packet['num_maples']
             for ix in range (num_maples):
-                send_packet(machine_2_ip[ix + 1], http_packet, file_receiver_port, request_type)
+                send_packet(machine_2_ip[ix + 1], http_packet_bytes, file_receiver_port, request_type)
 
         elif request_type == 'rereplicate':
             for dest in replica_ips:
-                return send_packet(dest, http_packet, file_receiver_port, request_type)
+                return send_packet(dest, http_packet_bytes, file_receiver_port, request_type)
         
         elif request_type in ['get', 'finish_ack']:
             # only need to fetch first one
-            send_packet(replica_ips[0], http_packet, file_receiver_port, request_type)
+            send_packet(replica_ips[0], http_packet_bytes, file_receiver_port, request_type)
         
         # request_type == 'update'
         elif request_type == 'update':
             for dest in dict(fail_detector.membership_list).keys():
                 if dest != host_domain_name:
-                    send_packet(dest, http_packet, file_receiver_port, request_type)
+                    send_packet(dest, http_packet_bytes, file_receiver_port, request_type)
         else:
             print(f"REQUEST TYPE WRONG IN SEND ERROR!! {str(request_type)}")
     
     # send from user to leader
     else:
         leader_id = min(fail_detector.membership_list.keys())
-        send_packet(leader_id, http_packet, file_leader_port, request_type)
+        send_packet(leader_id, http_packet_bytes, file_leader_port, request_type)
     
 
 def put_file(http_packet):
@@ -226,7 +226,7 @@ def handle_request(clientsocket, ip):
         task_id = http_packet['task_id']
         print(f"Task {task_id} finished from all servers")
 
-def reciever():
+def receiver():
     logger.info("listening and dealing with requests")
     thread_pool = {}
             
@@ -552,6 +552,7 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
         # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
         # number of lines
         http_packet['maple_id'] = ix + 1
+    
     send(http_packet, 'maple', False)
 
 def handleMapleRequest(http_packet):
@@ -645,7 +646,7 @@ if __name__ == "__main__":
     leader_thread = threading.Thread(target=leader_main)
     leader_thread.start()
 
-    listening_thread = threading.Thread(target = reciever)
+    listening_thread = threading.Thread(target = receiver)
     listening_thread.start()
 
     leader_function_thread = threading.Thread(target=send2Member)
@@ -765,5 +766,5 @@ if __name__ == "__main__":
                 print("Invalid Argument!")
         
         except Exception as e:
-            print(str(e))
+            print(e)
 
