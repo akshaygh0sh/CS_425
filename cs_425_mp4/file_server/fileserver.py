@@ -530,7 +530,7 @@ def downloadFile (sdfs_file_name):
             logger.error(f"init local/sdfs dir error: {str(e)}")
 
 
-def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
+def sendMapleRequest(maple_exe, num_maples, intermediate_prefix, sdfs_src_dir):
     num_maples = int(num_maples)
     http_packet = {}
     http_packet['task_id'] = host_domain_name + '_' + str(datetime.datetime.now())
@@ -550,7 +550,8 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
     # number of lines
     maple_queue[http_packet['task_id']] = {
         "pending_workers" : list(range(1, num_maples + 1)),
-        "accumulated_results" : ""
+        "accumulated_results" : "",
+        "prefix" : intermediate_prefix
     }
     ix = 1
     for target in maple_targets:
@@ -598,24 +599,44 @@ def handleMapleRequest(http_packet):
     except Exception as e:
         logger.error(f"init local/sdfs dir error: {str(e)}")
 
+def separateKeys(data):
+    data = data.split('\n')
+    key_info = {}
+    print("Separated Key data:", data)
+    for line in data:
+        pair = line.split(", ")
+        key = pair[0][1:]
+        value = pair[1][:-1]
+        if (key in key_info):
+            key_info[key].append(value)
+        else:
+            key_info[key] = [value]
+    return key_info
+
+
 def handleMapleResponse(http_packet):
     maple_results = http_packet['maple_results']
     maple_source = http_packet['maple_source']
     task_id =  http_packet['task_id']
     if (task_id in maple_queue):
-        print("Maple source:", maple_source)
         if (maple_source in maple_queue[task_id]["pending_workers"]):
             maple_queue[task_id]["pending_workers"].remove(maple_source)
             maple_queue[task_id]["accumulated_results"] += maple_results
         
-        print("Maple queue:", maple_queue)
         # Maple phase done
         if (len(maple_queue[task_id]["pending_workers"]) == 0):
-            with open("./maple_files/results.txt", "w") as maple_file:
-                maple_file.write(maple_queue[task_id]["accumulated_results"])
+            sdfs_intermediate_prefix = maple_queue[task_id]["prefix"]
+            separated_key_data = maple_queue[task_id]["accumulated_results"]
+            for key in separated_key_data:
+                intermediate_file_name = f"{sdfs_intermediate_prefix}_{key}"
+                with open(f"./maple_files/{intermediate_file_name}", "w") as maple_file:
+                    values = separated_key_data[key]
+                    for value in values:
+                        maple_file.write(f"({key}, {value})\n")
+                    send2Leader("put", intermediate_file_name, f"/home/aaghosh2/CS_425/cs_425_mp4/maple_files/{intermediate_file_name}")
             
             del maple_queue[task_id]
-            print("Results saved in ./maple_files/results.txt")
+            print("All maple tasks finished.")
 
 
 def clean_local_sdfs_dir():
@@ -690,7 +711,7 @@ if __name__ == "__main__":
 
             elif request_type.lower() == 'maple':
                 maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
-                sendMapleRequest(maple_exe, num_maples, sdfs_src_dir)
+                sendMapleRequest(maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir)
 
             elif request_type.lower() == 'ls':
                 sdfs_filename = user_input.split(' ')[1]
