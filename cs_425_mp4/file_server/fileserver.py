@@ -541,7 +541,7 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
     maple_targets = []
     members = list(fail_detector.membership_list.keys())
     if len(members) >= num_maples:
-        maple_targets = random.sample(members, 4)
+        maple_targets = random.sample(members, num_maples)
     else:
         maple_targets = random.sample(members, len(members))
 
