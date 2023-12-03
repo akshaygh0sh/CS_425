@@ -604,6 +604,7 @@ def separateKeys(data):
     key_info = {}
     print("Separated Key data:", data)
     for line in data:
+        print("Line:", line)
         pair = line.strip("()")
         pair = pair.split(", ")
         key, value = pair[0], pair[1]
