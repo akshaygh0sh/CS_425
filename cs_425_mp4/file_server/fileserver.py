@@ -155,6 +155,12 @@ def put_file(http_packet):
                     replica_ips = random.sample(members, 4)
                 else:
                     replica_ips = random.sample(members, len(members))
+            location_packet = {}
+            location_packet['task_id'] = host_domain_name + '_'+str(datetime.datetime.now())  
+            location_packet['request_type'] = 'update'
+            location_packet['sdfs_filename'] = output_file
+            location_packet['payload'] = {output_file:replica_ips}
+            send(location_packet, 'update', False)
 
             print("Replica_ips ", replica_ips)
             filelocation_list[output_file] = replica_ips
