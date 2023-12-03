@@ -63,7 +63,7 @@ def send_packet(dest, http_packet, port, request_type = None):
         sock.connect((dest, port))
         sock.send(http_packet)
         sock.close()
-        print(f"Send_Packet success from {str(host_domain_name)} to {str(dest)}")
+        # print(f"Send_Packet success from {str(host_domain_name)} to {str(dest)}")
         return True
    
     except Exception as e:
