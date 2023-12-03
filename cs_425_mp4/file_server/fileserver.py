@@ -24,7 +24,7 @@ file_leader_port = 5009
 file_sockets = {}
 leader_queue = list()
 schedule_counter = defaultdict(lambda : [0,0,0,0]) # schedule_counter = {'sdfsfilename':[R_count, W_count, R_pre, W_pre]}
-mp4_log_path = '/home/aaghosh2/MP4_log'
+mp3_log_path = '/home/aaghosh2/MP3_log'
 put_ack = defaultdict(list)
 delete_ack = defaultdict(list)
 #########
@@ -33,7 +33,7 @@ fail_detector = FailDetector()
 
 class logging():
     def __init__(self):
-        with open(mp4_log_path, 'w+') as fd:
+        with open(mp3_log_path, 'w+') as fd:
             #create an empty log file
             pass
     def info(self, log):
@@ -46,7 +46,7 @@ class logging():
     def writelog(self, log, stdout=True):
         if stdout:
             print("[LOGGING WRITE {}]: {}".format(datetime.datetime.now(), log))
-        with open(mp4_log_path, 'a+') as fd:
+        with open(mp3_log_path, 'a+') as fd:
             print("[LOGGING WRITE {}]: {}".format(datetime.datetime.now(), log), file = fd)
         #self.fd.write(log)
 
@@ -63,7 +63,7 @@ def send_packet(dest, http_packet, port, request_type = None):
         sock.connect((dest, port))
         sock.send(http_packet)
         sock.close()
-        # print(f"Send_Packet success from {str(host_domain_name)} to {str(dest)}")
+        print(f"Send_Packet success from {str(host_domain_name)} to {str(dest)}")
         return True
    
     except Exception as e:
@@ -115,7 +115,7 @@ def put_file(http_packet):
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
     print(f"From {str(source)} to {str(host_domain_name)} for {str(sdfs)}")
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP4_FILE/{sdfs}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP3_FILE/{sdfs}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -139,7 +139,7 @@ def get_file(http_packet):
     local = http_packet['local_filename']
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:{local}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP3_FILE/{sdfs} aaghosh2@{source}:{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -158,7 +158,7 @@ def delete_file(http_packet):
         This function deletes the file at current SDFS folder (4 servers executed)
     """
     sdfs = http_packet['sdfs_filename']
-    cmd = f'rm /home/aaghosh2/MP4_FILE/{sdfs}'
+    cmd = f'rm /home/aaghosh2/MP3_FILE/{sdfs}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
@@ -440,7 +440,7 @@ def rereplicate():
                             http_packet = {}
                             http_packet['task_id'] = host_domain_name + '_'+str(datetime.datetime.now())  
                             http_packet['sdfs_filename'] = sdfs_filename
-                            http_packet['local_filename'] = '/home/aaghosh2/MP4_FILE/' + sdfs_filename
+                            http_packet['local_filename'] = '/home/aaghosh2/MP3_FILE/' + sdfs_filename
                             http_packet['request_type'] = "put"
                             # If request_type == 'put': user input put localfilename, sdfs_filename, source == user host_domain, replica_ips == destination
                             http_packet['request_source'] = replica_source
@@ -514,17 +514,17 @@ def send2Leader(request_type, sdfs_filename, local_filename = None, host_domain_
 def clean_local_sdfs_dir():
     try:
         # init sdfs
-        cmd = 'rm -rf /home/aaghosh2/MP4_FILE'
+        cmd = 'rm -rf /home/aaghosh2/MP3_FILE'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully remove sdfs directory")
-        cmd = 'mkdir -p /home/aaghosh2/MP4_FILE'
+        cmd = 'mkdir -p /home/aaghosh2/MP3_FILE'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create sdfs directory")
         # init local to get files from sdfs
-        cmd = 'rm -rf /home/aaghosh2/MP4_LOCAL'
+        cmd = 'rm -rf /home/aaghosh2/MP3_LOCAL'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully remove local directory")
-        cmd = 'mkdir -p /home/aaghosh2/MP4_LOCAL'
+        cmd = 'mkdir -p /home/aaghosh2/MP3_LOCAL'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create local directory")
     except Exception as e:
@@ -597,7 +597,7 @@ if __name__ == "__main__":
             
             elif request_type.lower() == 'multiread': # multiread sdfs_filename 2 7
                 sdfs_filename, m = user_input.split(' ')[1], user_input.split(' ')[2]
-                local_filename = f'/home/aaghosh2/MP4_LOCAL/{sdfs_filename}'
+                local_filename = f'/home/aaghosh2/MP3_LOCAL/{sdfs_filename}'
                 mems = list(fail_detector.membership_list.keys())
                 random_vms = random.sample(mems, k = int(m))
                 print(f"Target VMS: {str(random_vms)}")
