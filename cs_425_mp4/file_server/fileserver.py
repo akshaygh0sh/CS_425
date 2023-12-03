@@ -595,6 +595,7 @@ def handleMapleResponse(http_packet):
         maple_queue[task_id]["pending_workers"].remove(maple_source)
         maple_queue[task_id]["accumulated_results"] += maple_results
     
+    print("Maple queue:", maple_queue)
     # Maple phase done
     if (len(maple_queue[task_id]["pending_workers"]) == 0):
         with open("../maple_files/results.txt", "w") as maple_file:
@@ -602,6 +603,7 @@ def handleMapleResponse(http_packet):
         
         del maple_queue[task_id]
 
+    print("Results saved in ./maple_files/results.txt")
 
 def clean_local_sdfs_dir():
     try:
