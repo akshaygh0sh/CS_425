@@ -633,7 +633,7 @@ def handleMapleResponse(http_packet):
                     values = separated_key_data[key]
                     for value in values:
                         maple_file.write(f"({key}, {value})\n")
-                    send2Leader("put", intermediate_file_name, f"/home/aaghosh2/CS_425/cs_425_mp4/maple_files/{intermediate_file_name}")
+                send2Leader("put", intermediate_file_name, f"/home/aaghosh2/CS_425/cs_425_mp4/maple_files/{intermediate_file_name}")
             
             del maple_queue[task_id]
             print("All maple tasks finished.")
