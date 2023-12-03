@@ -568,7 +568,8 @@ def handleMapleRequest(http_packet):
         lines_per_worker = len(lines) // num_maples
         sharded_file = f"sharded_{map_file}"
         with open (sharded_file, "w") as shard_file:
-            shard_file.writelines(lines[(maple_id - 1) * lines_per_worker : min(maple_id * lines_per_worker + 1, len(lines))])
+            start_index = (maple_id - 1) * lines_per_worker
+            shard_file.writelines(lines[start_index : min(start_index + lines_per_worker, len(lines))])
 
     command = [maple_exe, f"sharded_{map_file}"]
     try:
@@ -593,19 +594,20 @@ def handleMapleResponse(http_packet):
     maple_results = http_packet['maple_results']
     maple_source = http_packet['maple_source']
     task_id =  http_packet['task_id']
-    print("Maple source:", maple_source)
-    if (maple_source in maple_queue[task_id]["pending_workers"]):
-        maple_queue[task_id]["pending_workers"].remove(maple_source)
-        maple_queue[task_id]["accumulated_results"] += maple_results
-    
-    print("Maple queue:", maple_queue)
-    # Maple phase done
-    if (len(maple_queue[task_id]["pending_workers"]) == 0):
-        with open("./maple_files/results.txt", "w") as maple_file:
-            maple_file.write(maple_queue[task_id]["accumulated_results"])
+    if (task_id in maple_queue):
+        print("Maple source:", maple_source)
+        if (maple_source in maple_queue[task_id]["pending_workers"]):
+            maple_queue[task_id]["pending_workers"].remove(maple_source)
+            maple_queue[task_id]["accumulated_results"] += maple_results
         
-        del maple_queue[task_id]
-        print("Results saved in ./maple_files/results.txt")
+        print("Maple queue:", maple_queue)
+        # Maple phase done
+        if (len(maple_queue[task_id]["pending_workers"]) == 0):
+            with open("./maple_files/results.txt", "w") as maple_file:
+                maple_file.write(maple_queue[task_id]["accumulated_results"])
+            
+            del maple_queue[task_id]
+            print("Results saved in ./maple_files/results.txt")
 
     
 
