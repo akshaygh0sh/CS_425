@@ -545,7 +545,6 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
     else:
         maple_targets = random.sample(members, len(members))
 
-    maple_targets = [int(target[13:15]) for target in maple_targets]
     # Maple ID denotes the that this worker
     # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
     # number of lines
