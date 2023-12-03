@@ -552,8 +552,7 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
         # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
         # number of lines
         http_packet['maple_id'] = ix + 1
-    
-    send(http_packet, 'maple', False)
+        send(http_packet, 'maple', False)
 
 def handleMapleRequest(http_packet):
     maple_exe = http_packet['maple_exe']
