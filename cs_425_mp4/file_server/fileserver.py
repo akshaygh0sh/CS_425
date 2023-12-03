@@ -599,7 +599,6 @@ def handleMapleResponse(http_packet):
         del maple_queue[task_id]
 
 
-
 def clean_local_sdfs_dir():
     try:
         # init sdfs
