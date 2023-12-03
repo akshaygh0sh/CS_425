@@ -591,7 +591,8 @@ def handleMapleResponse(http_packet):
     maple_results = http_packet['maple_results']
     maple_source = http_packet['maple_source']
     task_id =  http_packet['task_id']
-    if (maple_source in maple_queue[task_id]):
+    print("Maple source:", maple_source)
+    if (maple_source in maple_queue[task_id]["pending_workers"]):
         maple_queue[task_id]["pending_workers"].remove(maple_source)
         maple_queue[task_id]["accumulated_results"] += maple_results
     
