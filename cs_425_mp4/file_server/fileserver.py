@@ -122,27 +122,27 @@ def put_file(http_packet):
         print("Local file:", local, " sdfs file:", sdfs)
         cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
-        # Shard file (for Map reduce)
-        with open(local, "r") as original_file:
-            lines = original_file.readlines()
+        # # Shard file (for Map reduce)
+        # with open(local, "r") as original_file:
+        #     lines = original_file.readlines()
         
-        LINES_PER_SHARD = 100
-        total_lines = len(lines)
-        num_shards = (total_lines + LINES_PER_SHARD - 1) // LINES_PER_SHARD
+        # LINES_PER_SHARD = 100
+        # total_lines = len(lines)
+        # num_shards = (total_lines + LINES_PER_SHARD - 1) // LINES_PER_SHARD
 
-        for shard_num in range(num_shards):
-            start_index = shard_num * LINES_PER_SHARD
-            end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
+        # for shard_num in range(num_shards):
+        #     start_index = shard_num * LINES_PER_SHARD
+        #     end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
 
-            output_file = f"{sdfs}_shard_{shard_num + 1}.txt"
-            with open(output_file, 'w') as outfile:
-                outfile.writelines(lines[start_index:end_index])
+        #     output_file = f"{sdfs}_shard_{shard_num + 1}.txt"
+        #     with open(output_file, 'w') as outfile:
+        #         outfile.writelines(lines[start_index:end_index])
 
-            print("Test")
-            # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
-            # os.remove(output_file)
-            result = subprocess.check_output(cmd, shell=True)
+        #     print("Test")
+        #     # Store shards
+        #     cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
+        #     # os.remove(output_file)
+        #     result = subprocess.check_output(cmd, shell=True)
 
         logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
