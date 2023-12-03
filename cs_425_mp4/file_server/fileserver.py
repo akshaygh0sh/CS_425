@@ -7,6 +7,7 @@ import random
 import json
 from collections import Counter, deque, defaultdict
 import os
+import subprocess
 sys.path.insert(0, './server')
 from server import FailDetector
 
@@ -17,10 +18,11 @@ machine_2_ip = {i: 'fa23-cs425-56{}.cs.illinois.edu'.format('0'+str(i)) for i in
 machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                                            #host domain name of machine 10
 msg_format = 'utf-8'                #data encoding format of socket programming
 filelocation_list = {} # sdfs_filename: [ips which have this file]
+maple_queue = {}
 host_domain_name = socket.gethostname() 
 machine_id = int(host_domain_name[13:15])
 file_sender_port = 5007
-file_reciever_port = 5008
+file_receiver_port = 5008
 file_leader_port = 5009
 file_sockets = {}
 leader_queue = list()
@@ -84,21 +86,26 @@ def send(http_packet, request_type, to_leader, replica_ips=None):
 
         if request_type in ['put', 'delete']:
             for dest in replica_ips:
-                send_packet(dest, http_packet, file_reciever_port, request_type)
+                send_packet(dest, http_packet, file_receiver_port, request_type)
+
+        elif request_type == 'maple':
+            num_maples = http_packet['num_maples']
+            for ix in range (num_maples):
+                send_packet(machine_2_ip[ix + 1], http_packet, file_receiver_port, request_type)
 
         elif request_type == 'rereplicate':
             for dest in replica_ips:
-                return send_packet(dest, http_packet, file_reciever_port, request_type)
+                return send_packet(dest, http_packet, file_receiver_port, request_type)
         
         elif request_type in ['get', 'finish_ack']:
             # only need to fetch first one
-            send_packet(replica_ips[0], http_packet, file_reciever_port, request_type)
+            send_packet(replica_ips[0], http_packet, file_receiver_port, request_type)
         
         # request_type == 'update'
         elif request_type == 'update':
             for dest in dict(fail_detector.membership_list).keys():
                 if dest != host_domain_name:
-                    send_packet(dest, http_packet, file_reciever_port, request_type)
+                    send_packet(dest, http_packet, file_receiver_port, request_type)
         else:
             print(f"REQUEST TYPE WRONG IN SEND ERROR!! {str(request_type)}")
     
@@ -211,6 +218,10 @@ def handle_request(clientsocket, ip):
         delete_file(http_packet)
     elif http_packet['request_type'] == 'update':
         update_file(http_packet)
+    elif http_packet['request_type'] == 'maple':
+        handleMapleRequest(http_packet)
+    elif http_packet['request_type'] == 'maple_response':
+        handleMapleResponse(http_packet)
     elif http_packet['request_type'] == 'finish_ack':
         task_id = http_packet['task_id']
         print(f"Task {task_id} finished from all servers")
@@ -508,11 +519,86 @@ def send2Leader(request_type, sdfs_filename, local_filename = None, host_domain_
     http_packet['request_source'] = host_domain_name
 
     # use socket['result_port] to get result
-    if request_type in ['put', 'get', 'delete']:
+    if request_type in ['put', 'get', 'delete', 'maple']:
         send(http_packet, request_type, True)
 
     else:
         print(f"INVALID request_type {request_type}")
+
+def downloadFile (sdfs_file_name):
+    if (sdfs_file_name in filelocation_list):
+        file_location = random.choice(filelocation_list[sdfs_file_name])
+        cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{file_location}:/home/aaghosh2/MP3_FILE/{sdfs_file_name} /home/aaghosh2/MP3_LOCAL/{sdfs_file_name}'
+        try:
+            result = subprocess.check_output(cmd, shell=True)
+        except Exception as e:
+            logger.error(f"init local/sdfs dir error: {str(e)}")
+
+
+def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
+    http_packet = {}
+    http_packet['task_id'] = host_domain_name + '_' + str(datetime.datetime.now())
+    http_packet['maple_exe'] = maple_exe
+    http_packet['request_type'] = 'maple'
+    http_packet['map_file'] = sdfs_src_dir
+    http_packet['num_maples'] = num_maples
+    maple_queue[http_packet['task_id']] = {
+        "pending_workers" : list(range(1, num_maples + 1)),
+        "accumulated_results" : ""
+    }
+    for ix in range (num_maples):
+        # Maple ID denotes the that this worker
+        # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
+        # number of lines
+        http_packet['maple_id'] = ix + 1
+    send(http_packet, 'maple', False)
+
+def handleMapleRequest(http_packet):
+    maple_exe = http_packet['maple_exe']
+    map_file = http_packet['map_file']
+    maple_id = http_packet['maple_id']
+    num_maples = http_packet['num_maples']
+    task_id =  http_packet['task_id']
+    # Download file, and start processing
+    downloadFile(map_file)
+
+    with open (f"/home/aaghosh2/MP3_LOCAL/{map_file}", "r") as input_file:
+        lines = input_file.readlines()
+        lines_per_worker = len(lines) // num_maples
+        sharded_file = f"sharded_{map_file}"
+        with open (sharded_file, "w") as shard_file:
+            shard_file.writelines(lines[(maple_id - 1) * lines_per_worker : min(maple_id * lines_per_worker, len(lines))])
+
+    command = [maple_exe, f"sharded_{map_file}"]
+    try:
+        result = subprocess.run(command, check = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        keys_json = result.stdout
+        response_packet = {}
+        response_packet['request_type'] = 'maple_response'
+        response_packet['maple_results'] = keys_json
+        response_packet['maple_source'] = maple_id
+        response_packet['task_id'] = task_id
+        # Send results back to leader
+        send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, request_type)
+    except Exception as e:
+        logger.error(f"init local/sdfs dir error: {str(e)}")
+
+def handleMapleResponse(http_packet):
+    maple_results = http_packet['maple_results']
+    maple_source = http_packet['maple_source']
+    task_id =  http_packet['task_id']
+    if (maple_source in maple_queue[task_id]):
+        maple_queue[task_id]["pending_workers"].remove(maple_source)
+        maple_queue[task_id]["accumulated_results"] += maple_results
+    
+    # Maple phase done
+    if (len(maple_queue[task_id]["pending_workers"]) == 0):
+        with open("../maple_files/results.txt", "w") as maple_file:
+            maple_file.write(maple_queue[task_id]["accumulated_results"])
+        
+        del maple_queue[task_id]
+
+
 
 def clean_local_sdfs_dir():
     try:
@@ -541,7 +627,7 @@ if __name__ == "__main__":
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)         
     hostip = socket.gethostname() 
-    hostport = file_reciever_port               
+    hostport = file_receiver_port               
 
     sock.bind((hostip, hostport))
     file_sockets['reciever'] = sock
@@ -583,6 +669,10 @@ if __name__ == "__main__":
             elif request_type.lower() == 'delete':
                 sdfs_filename = user_input.split(' ')[1]
                 send2Leader(request_type, sdfs_filename)
+
+            elif request_type.lower() == 'maple':
+                maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
+                sendMapleRequest(maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir)
 
             elif request_type.lower() == 'ls':
                 sdfs_filename = user_input.split(' ')[1]
