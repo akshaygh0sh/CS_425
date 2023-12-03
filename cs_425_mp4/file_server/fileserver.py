@@ -6,8 +6,6 @@ import sys
 import random
 import json
 from collections import Counter, deque, defaultdict
-import os
-import paramiko
 sys.path.insert(0, './server')
 from server import FailDetector
 
@@ -107,7 +105,7 @@ def send(http_packet, request_type, to_leader, replica_ips=None):
     else:
         leader_id = min(fail_detector.membership_list.keys())
         send_packet(leader_id, http_packet, file_leader_port, request_type)
-
+    
 
 def put_file(http_packet):
     """
@@ -117,33 +115,9 @@ def put_file(http_packet):
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
     print(f"From {str(source)} to {str(host_domain_name)} for {str(sdfs)}")
-        
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP4_FILE/{sdfs}'
     try:
-        print("Local file:", local, " sdfs file:", sdfs)
-        cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
-        # # Shard file (for Map reduce)
-        # with open(local, "r") as original_file:
-        #     lines = original_file.readlines()
-        
-        # LINES_PER_SHARD = 100
-        # total_lines = len(lines)
-        # num_shards = (total_lines + LINES_PER_SHARD - 1) // LINES_PER_SHARD
-
-        # for shard_num in range(num_shards):
-        #     start_index = shard_num * LINES_PER_SHARD
-        #     end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
-
-        #     output_file = f"{sdfs}_shard_{shard_num + 1}.txt"
-        #     with open(output_file, 'w') as outfile:
-        #         outfile.writelines(lines[start_index:end_index])
-
-        #     print("Test")
-        #     # Store shards
-        #     cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
-        #     # os.remove(output_file)
-        #     result = subprocess.check_output(cmd, shell=True)
-
         logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
         return_packet['task_id'] = http_packet['task_id']
@@ -165,7 +139,7 @@ def get_file(http_packet):
     local = http_packet['local_filename']
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:/home/aaghosh2/MP4_LOCAL/{local}'
+    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
