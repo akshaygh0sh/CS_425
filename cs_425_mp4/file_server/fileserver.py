@@ -593,7 +593,7 @@ def handleMapleRequest(http_packet):
         if (machine_id != "01"):
             response_packet = json.dumps(response_packet)
             response_packet = response_packet.encode(msg_format)
-            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, request_type)
+            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "maple_request")
         else:
             handleMapleResponse(response_packet)
     except Exception as e:
