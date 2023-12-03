@@ -8,6 +8,7 @@ import json
 from collections import Counter, deque, defaultdict
 import os
 import subprocess
+import numpy as np
 sys.path.insert(0, './server')
 from server import FailDetector
 
@@ -19,6 +20,7 @@ machine_2_ip[10] = 'fa23-cs425-5610.cs.illinois.edu'                            
 msg_format = 'utf-8'                #data encoding format of socket programming
 filelocation_list = {} # sdfs_filename: [ips which have this file]
 maple_queue = {}
+juice_queue = {}
 host_domain_name = socket.gethostname() 
 machine_id = int(host_domain_name[13:15])
 file_sender_port = 5007
@@ -561,6 +563,46 @@ def sendMapleRequest(maple_exe, num_maples, intermediate_prefix, sdfs_src_dir):
         http_packet_bytes = http_packet_bytes.encode(msg_format)
         send_packet(target, http_packet_bytes, file_receiver_port, 'maple')
 
+# Get all files in the file system that match the prefix
+# and split them into num_juices # of chunks
+def getAllFiles(sdfs_intermediate_prefix, num_juices):
+    files = list(filelocation_list.keys())
+    matching_files = [file for file in files if file.startswith(sdfs_intermediate_prefix)]
+    matching_files = np.array_split(matching_files, num_juices)
+    matching_files = [list(arr) for arr in matching_files]
+    return matching_files
+
+def sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_dir, delete_input):
+    num_juices = int(num_juices)
+    http_packet = {}
+    http_packet['task_id'] = host_domain_name + '_' + str(datetime.datetime.now())
+    http_packet['juice_exe'] = juice_exe
+    http_packet['request_type'] = 'juice'
+    http_packet['num_juices'] = num_juices
+    juice_targets = []
+    members = list(fail_detector.membership_list.keys())
+    if len(members) >= num_juices:
+        juice_targets = random.sample(members, num_juices)
+    else:
+        juice_targets = random.sample(members, len(members))
+    
+    matching_files = getAllFiles(sdfs_intermediate_prefix, num_juices)
+    juice_queue[http_packet['task_id']] = {
+        "pending_workers" : list(range(1, num_maples + 1)),
+        "accumulated_results" : "",
+        "sdfs_dest_filename" : sdfs_dest_dir,
+        "delete_input" : delete_input
+    }
+    ix = 1
+    for target in juice_targets:
+        http_packet['juice_id'] = ix
+        http_packet['files_to_reduce'] = matching_files[ix - 1]
+        ix+=1
+        http_packet_bytes = json.dumps(http_packet)
+        http_packet_bytes = http_packet_bytes.encode(msg_format)
+        send_packet(target, http_packet_bytes, file_receiver_port, 'juice')
+
+
 def handleMapleRequest(http_packet):
     maple_exe = http_packet['maple_exe']
     map_file = http_packet['map_file']
@@ -593,11 +635,40 @@ def handleMapleRequest(http_packet):
         if (machine_id != "01"):
             response_packet = json.dumps(response_packet)
             response_packet = response_packet.encode(msg_format)
-            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "maple_request")
+            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "maple_response")
         else:
             handleMapleResponse(response_packet)
     except Exception as e:
         logger.error(f"init local/sdfs dir error: {str(e)}")
+
+def handleJuiceRequest(http_packet):
+    juice_exe = http_packet['juice_exe']
+    reduce_files = eval(http_packet['files_to_reduce'])
+    juice_id = int(http_packet['juice_id'])
+    num_juices = int(http_packet['num_juices'])
+    task_id =  http_packet['task_id']
+    # Download files, and start processing
+    for file in reduce_files:
+        downloadFile(file)
+
+        command = [juice_exe, f"/home/aaghosh2/MP3_LOCAL/{file}"]
+        try:
+            result = subprocess.run(command, check = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            keys_json = result.stdout.decode()
+            response_packet = {}
+            response_packet['request_type'] = 'juice_response'
+            response_packet['juice_results'] = keys_json
+            response_packet['juice_source'] = juice_id
+            response_packet['task_id'] = task_id
+            # Send results back to leader
+            if (machine_id != "01"):
+                response_packet = json.dumps(response_packet)
+                response_packet = response_packet.encode(msg_format)
+                send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "juice_response")
+            else:
+                handleJuiceResponse(response_packet)
+        except Exception as e:
+            logger.error(f"init local/sdfs dir error: {str(e)}")
 
 def separateKeys(data):
     data = data.split('\n')
@@ -638,18 +709,44 @@ def handleMapleResponse(http_packet):
             del maple_queue[task_id]
             print("All maple tasks finished.")
 
+def handleJuiceResponse(http_packet):
+    juice_results = http_packet['juice_results']
+    juice_source = http_packet['juice_source']
+    task_id =  http_packet['task_id']
+    if (task_id in juice_queue):
+        if (juice_source in juice_queue[task_id]["pending_workers"]):
+            juice_queue[task_id]["pending_workers"].remove(juice_source)
+            juice_queue[task_id]["accumulated_results"] += juice_results
+        
+        # Juice phase done
+        if (len(juice_queue[task_id]["pending_workers"]) == 0):
+            sdfs_dest_filename = juice_queue[task_id]["sdfs_dest_filename"]
+            reduce_data = json.dumps(juice_queue[task_id]["accumulated_results"])
+            with open(f"./juice_files/{sdfs_dest_filename}", "w") as juice_file:
+                for key in reduce_data:
+                    juice_file.write(f"({key}, {reduce_data[key]})\n")
+                send2Leader("put", sdfs_dest_filename, f"/home/aaghosh2/CS_425/cs_425_mp4/juice_files/{sdfs_dest_filename}")
+            
+            del juice_queue[task_id]
+            print("All juice tasks finished.")
 
 def clean_local_sdfs_dir():
     try:
         # init sdfs
         cmd = 'rm -rf /home/aaghosh2/MP3_FILE'
         result = subprocess.check_output(cmd, shell=True)
-        logger.info("successfully remove sdfs directory")
+        logger.info("successfully remove sdfs directory") 
         cmd = 'mkdir -p /home/aaghosh2/MP3_FILE'
+        result = subprocess.check_output(cmd, shell=True)
         cmd = 'rm -rf /home/aaghosh2/CS_425/cs_425_mp4/maple_files'
         result = subprocess.check_output(cmd, shell=True)
-        logger.info("successfully remove sdfs directory")
+        logger.info("successfully remove maple files directory")
         cmd = 'mkdir -p /home/aaghosh2/CS_425/cs_425_mp4/maple_files'
+        result = subprocess.check_output(cmd, shell=True)
+        cmd = 'rm -rf /home/aaghosh2/CS_425/cs_425_mp4/juice_files'
+        result = subprocess.check_output(cmd, shell=True)
+        logger.info("successfully remove juice files directory")
+        cmd = 'mkdir -p /home/aaghosh2/CS_425/cs_425_mp4/juice_files'
         result = subprocess.check_output(cmd, shell=True)
         logger.info("successfully create sdfs directory")
         # init local to get files from sdfs
@@ -663,7 +760,6 @@ def clean_local_sdfs_dir():
         logger.error(f"init local/sdfs dir error: {str(e)}")
     
         
-
 if __name__ == "__main__":
 
     clean_local_sdfs_dir()
@@ -716,6 +812,11 @@ if __name__ == "__main__":
             elif request_type.lower() == 'maple':
                 maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
                 sendMapleRequest(maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir)
+
+            elif request_type.lower() == 'juice':
+                juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
+                delete_input = user_input.split(' ')[5]
+                sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_dir, delete_input)
 
             elif request_type.lower() == 'ls':
                 sdfs_filename = user_input.split(' ')[1]

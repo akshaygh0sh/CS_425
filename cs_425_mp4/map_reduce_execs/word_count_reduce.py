@@ -6,15 +6,18 @@ def reduce_function(file_path):
     word_count_dict = {}
     try:
         with open(file_path, 'r') as file:
-            for line in file:
-                # Split the input into key and value
-                pair = line.split(", ")
-                key = pair[0][1:]
-                value = int(pair[1][:-1])
-                if (key in word_count_dict):
-                    word_count_dict[key] += value
-                else:
-                    word_count_dict[key] = value
+            data = file.read()
+            data = data.split("\n")
+            for line in data:
+                if (line != ""):
+                    # Split the input into key and value
+                    pair = line.strip("()")
+                    pair = pair.split(", ")
+                    key, value = pair[0], int(pair[1])
+                    if (key in word_count_dict):
+                        word_count_dict[key] += value
+                    else:
+                        word_count_dict[key] = value
             
         return word_count_dict
     except FileNotFoundError:

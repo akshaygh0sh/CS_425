@@ -10,9 +10,6 @@ def map_function(file_path):
                 # Remove leading and trailing whitespaces and convert to lowercase
                 line = line.strip().lower()
                 
-                # Remove punctuation
-                line = line.translate(str.maketrans("", "", string.punctuation))
-                
                 # Split the line into words
                 words = line.split()
                 
