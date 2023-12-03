@@ -6,6 +6,7 @@ import sys
 import random
 import json
 from collections import Counter, deque, defaultdict
+import os
 sys.path.insert(0, './server')
 from server import FailDetector
 
@@ -144,7 +145,7 @@ def put_file(http_packet):
             output_path = ""
             with open(output_file, 'w') as outfile:
                 outfile.writelines(lines[start_index:end_index])
-                output_path = outfile.name
+                output_path = os.path.abspath(output_file)
 
             # select to do job
             members = list(fail_detector.membership_list.keys())
