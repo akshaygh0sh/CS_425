@@ -88,11 +88,6 @@ def send(http_packet, request_type, to_leader, replica_ips=None):
             for dest in replica_ips:
                 send_packet(dest, http_packet_bytes, file_receiver_port, request_type)
 
-        elif request_type == 'maple':
-            num_maples = http_packet['num_maples']
-            for ix in range (num_maples):
-                send_packet(machine_2_ip[ix + 1], http_packet_bytes, file_receiver_port, request_type)
-
         elif request_type == 'rereplicate':
             for dest in replica_ips:
                 return send_packet(dest, http_packet_bytes, file_receiver_port, request_type)
@@ -543,16 +538,28 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
     http_packet['request_type'] = 'maple'
     http_packet['map_file'] = sdfs_src_dir
     http_packet['num_maples'] = num_maples
+    maple_targets = []
+    members = fail_detector.membership_list
+    if len(members) >= num_maples:
+        maple_targets = random.sample(members, 4)
+    else:
+        maple_targets = random.sample(members, len(members))
+
+    maple_targets = [int(target[13:15]) for target in maple_targets]
+    # Maple ID denotes the that this worker
+    # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
+    # number of lines
     maple_queue[http_packet['task_id']] = {
         "pending_workers" : list(range(1, num_maples + 1)),
         "accumulated_results" : ""
     }
-    for ix in range (num_maples):
-        # Maple ID denotes the that this worker
-        # is in charge of the (maple_id - 1) * lines_per_worker to the (maple_id * lines_per_worker)
-        # number of lines
-        http_packet['maple_id'] = ix + 1
-        send(http_packet, 'maple', False)
+    ix = 1
+    for target in maple_targets:
+        http_packet['maple_id'] = ix
+        ix+=1
+        http_packet_bytes = json.dumps(http_packet)
+        http_packet_bytes = http_packet_bytes.encode(msg_format)
+        send_packet(target, http_packet_bytes, file_receiver_port, 'maple')
 
 def handleMapleRequest(http_packet):
     maple_exe = http_packet['maple_exe']
