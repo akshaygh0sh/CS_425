@@ -1,4 +1,17 @@
-This is a test, does this work?
+                words = line.split()
+                
+                # Emit key-value pairs for each word
+                for word in words:
+                    print(f"({word}, 1)")
+    except FileNotFoundError:
+        print(f"Error: File not found: {file_path}")
+        sys.exit(1)
 
-maple ./dist/word_count_map 2 fdsa test.txt
-put /home/aaghosh2/CS_425/cs_425_mp4/test_commands test.txt
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: word_count_map.py <file_path>")
+        sys.exit(1)
+
+    file_path = sys.argv[1]
+    map_function(file_path)
+nto words

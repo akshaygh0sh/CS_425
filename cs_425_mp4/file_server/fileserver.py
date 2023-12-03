@@ -569,7 +569,9 @@ def handleMapleRequest(http_packet):
         sharded_file = f"sharded_{map_file}"
         with open (sharded_file, "w") as shard_file:
             start_index = (maple_id - 1) * lines_per_worker
-            shard_file.writelines(lines[start_index : min(start_index + lines_per_worker, len(lines))])
+            end_index = min(start_index + lines_per_worker, len(lines))
+            print("Start index:", start_index, " end index:", end_index)
+            shard_file.writelines(lines[start_index : end_index])
 
     command = [maple_exe, f"sharded_{map_file}"]
     try:
