@@ -118,6 +118,7 @@ def put_file(http_packet):
     print(f"From {str(source)} to {str(host_domain_name)} for {str(sdfs)}")
         
     try:
+        print("Local file:", local, " sdfs file:", sdfs)
         cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
         # Shard file (for Map reduce)
@@ -136,9 +137,10 @@ def put_file(http_packet):
             with open(output_file, 'w') as outfile:
                 outfile.writelines(lines[start_index:end_index])
 
+            print("Test")
             # Store shards
             cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} {output_file}'
-            os.remove(output_file)
+            # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
 
         logger.info(f"Complete {str(http_packet)} ")
