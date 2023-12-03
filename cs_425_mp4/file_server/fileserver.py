@@ -729,7 +729,7 @@ def handleJuiceResponse(http_packet):
         # Juice phase done
         if (len(juice_queue[task_id]["pending_workers"]) == 0):
             sdfs_dest_filename = juice_queue[task_id]["sdfs_dest_filename"]
-            reduce_data = json.dumps(juice_queue[task_id]["accumulated_results"])
+            reduce_data = json.loads(juice_queue[task_id]["accumulated_results"])
             with open(f"./juice_files/{sdfs_dest_filename}", "w") as juice_file:
                 for key in reduce_data:
                     juice_file.write(f"({key}, {reduce_data[key]})\n")
