@@ -141,8 +141,10 @@ def put_file(http_packet):
             end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
 
             output_file = f"shard_{shard_num + 1}_{sdfs}"
+            output_path = ""
             with open(output_file, 'w') as outfile:
                 outfile.writelines(lines[start_index:end_index])
+                output_path = outfile.name
 
             # select to do job
             members = list(fail_detector.membership_list.keys())
@@ -166,7 +168,7 @@ def put_file(http_packet):
             filelocation_list[output_file] = replica_ips
             print("FILE LOCATION LIST SHARD:", filelocation_list)
             # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{output_file.name} /home/aaghosh2/MP3_FILE/{output_file}'
+            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{output_path} /home/aaghosh2/MP3_FILE/{output_file}'
             # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
             logger.info(f"Complete {str(http_packet)} ")
