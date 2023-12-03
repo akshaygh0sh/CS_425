@@ -574,7 +574,7 @@ def handleMapleRequest(http_packet):
     command = [maple_exe, f"sharded_{map_file}"]
     try:
         result = subprocess.run(command, check = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        keys_json = result.stdout
+        keys_json = result.stdout.decode()
         response_packet = {}
         response_packet['request_type'] = 'maple_response'
         response_packet['maple_results'] = keys_json
