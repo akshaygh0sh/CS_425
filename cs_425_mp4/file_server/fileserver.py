@@ -649,7 +649,7 @@ def handleMapleRequest(http_packet):
 
 def handleJuiceRequest(http_packet):
     juice_exe = http_packet['juice_exe']
-    reduce_files = eval(http_packet['files_to_reduce'])
+    reduce_files = list(http_packet['files_to_reduce'])
     juice_id = int(http_packet['juice_id'])
     num_juices = int(http_packet['num_juices'])
     task_id =  http_packet['task_id']
