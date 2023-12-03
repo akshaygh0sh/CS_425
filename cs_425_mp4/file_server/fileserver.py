@@ -119,7 +119,7 @@ def put_file(http_packet):
         
     try:
         print("Local file:", local, " sdfs file:", sdfs)
-        cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local} aaghosh2@{source}:{sdfs}'
+        cmd = f'scp {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
         # Shard file (for Map reduce)
         with open(f"/home/aaghosh2/MP4_FILE/{sdfs}", "r") as original_file:
@@ -139,7 +139,7 @@ def put_file(http_packet):
 
             print("Test")
             # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:{output_file}'
+            cmd = f'scp {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
             # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
 
@@ -164,7 +164,7 @@ def get_file(http_packet):
     local = http_packet['local_filename']
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:{local}'
+    cmd = f'scp /home/aaghosh2/MP4_FILE/{sdfs} aaghosh2@{source}:/home/aaghosh2/MP4_LOCAL/{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
