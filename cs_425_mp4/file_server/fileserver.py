@@ -654,6 +654,7 @@ def handleJuiceRequest(http_packet):
     num_juices = int(http_packet['num_juices'])
     task_id =  http_packet['task_id']
     # Download files, and start processing
+    reduce_output = ""
     for file in reduce_files:
         downloadFile(file)
 
@@ -661,22 +662,26 @@ def handleJuiceRequest(http_packet):
         try:
             result = subprocess.run(command, check = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             keys_json = result.stdout.decode()
-            response_packet = {}
-            response_packet['request_type'] = 'juice_response'
-            response_packet['juice_results'] = keys_json
-            response_packet['juice_source'] = juice_id
-            response_packet['task_id'] = task_id
-            # Send results back to leader
-            if (machine_id != "01"):
-                response_packet = json.dumps(response_packet)
-                response_packet = response_packet.encode(msg_format)
-                send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "juice_response")
-                print("Finish handling juice request")
-            else:
-                handleJuiceResponse(response_packet)
-                print("Finish handling juice request")
+            reduce_output += keys_json
         except Exception as e:
             logger.error(f"init local/sdfs dir error: {str(e)}")
+    try:
+        response_packet = {}
+        response_packet['request_type'] = 'juice_response'
+        response_packet['juice_results'] = reduce_output
+        response_packet['juice_source'] = juice_id
+        response_packet['task_id'] = task_id
+        # Send results back to leader
+        if (machine_id != "01"):
+            response_packet = json.dumps(response_packet)
+            response_packet = response_packet.encode(msg_format)
+            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, "juice_response")
+            print("Finish handling juice request")
+        else:
+            handleJuiceResponse(response_packet)
+            print("Finish handling juice request")
+    except Exception as e:
+        logger.error(f"init local/sdfs dir error: {str(e)}")
 
 def separateKeys(data):
     data = data.split('\n')
