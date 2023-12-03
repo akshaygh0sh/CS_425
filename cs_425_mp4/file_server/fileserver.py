@@ -536,6 +536,7 @@ def downloadFile (sdfs_file_name):
 
 
 def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
+    num_maples = int(num_maples)
     http_packet = {}
     http_packet['task_id'] = host_domain_name + '_' + str(datetime.datetime.now())
     http_packet['maple_exe'] = maple_exe
@@ -557,7 +558,7 @@ def handleMapleRequest(http_packet):
     maple_exe = http_packet['maple_exe']
     map_file = http_packet['map_file']
     maple_id = http_packet['maple_id']
-    num_maples = http_packet['num_maples']
+    num_maples = int(http_packet['num_maples'])
     task_id =  http_packet['task_id']
     # Download file, and start processing
     downloadFile(map_file)
