@@ -166,7 +166,7 @@ def put_file(http_packet):
             filelocation_list[output_file] = replica_ips
             print("FILE LOCATION LIST SHARD:", filelocation_list)
             # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
+            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP3_FILE/{sdfs}'
             # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
             logger.info(f"Complete {str(http_packet)} ")
@@ -177,9 +177,6 @@ def put_file(http_packet):
             return_packet['sdfs_filename'] = output_file
             return_packet['replica_ip'] = host_domain_name
             send(return_packet, 'put_ack', True)
-
-
-        
 
     except Exception as e:
         logger.error(f"Command: {cmd}, Error: {str(e)}")
