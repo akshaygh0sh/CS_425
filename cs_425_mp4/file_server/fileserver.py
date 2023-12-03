@@ -140,11 +140,24 @@ def put_file(http_packet):
             start_index = shard_num * LINES_PER_SHARD
             end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
 
-            output_file = f"{sdfs}_shard_{shard_num + 1}.txt"
+            output_file = f"shard_{shard_num + 1}_{sdfs}"
             with open(output_file, 'w') as outfile:
                 outfile.writelines(lines[start_index:end_index])
 
-            print("Test")
+            # select to do job
+            members = list(fail_detector.membership_list.keys())
+            members.remove(host_domain_name)
+
+            if output_file in filelocation_list:
+                replica_ips = filelocation_list[output_file]
+            else:
+                if len(members) >= 4:
+                    replica_ips = random.sample(members, 4)
+                else:
+                    replica_ips = random.sample(members, len(members))
+
+            print("Replica_ips ", replica_ips)
+            filelocation_list[output_file] = replica_ips
             # Store shards
             cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
             # os.remove(output_file)
