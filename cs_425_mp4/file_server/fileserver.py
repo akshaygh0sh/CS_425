@@ -217,8 +217,12 @@ def handle_request(clientsocket, ip):
         update_file(http_packet)
     elif http_packet['request_type'] == 'maple':
         handleMapleRequest(http_packet)
+    elif http_packet['request_type'] == 'juice':
+        handleJuiceRequest(http_packet)
     elif http_packet['request_type'] == 'maple_response':
         handleMapleResponse(http_packet)
+    elif http_packet['request_type'] == 'juice_response':
+        handleJuiceResponse(http_packet)
     elif http_packet['request_type'] == 'finish_ack':
         task_id = http_packet['task_id']
         print(f"Task {task_id} finished from all servers")
