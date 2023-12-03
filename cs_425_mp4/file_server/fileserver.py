@@ -568,7 +568,7 @@ def handleMapleRequest(http_packet):
         lines_per_worker = len(lines) // num_maples
         sharded_file = f"sharded_{map_file}"
         with open (sharded_file, "w") as shard_file:
-            shard_file.writelines(lines[(maple_id - 1) * lines_per_worker : min(maple_id * lines_per_worker, len(lines))])
+            shard_file.writelines(lines[(maple_id - 1) * lines_per_worker : min(maple_id * lines_per_worker + 1, len(lines))])
 
     command = [maple_exe, f"sharded_{map_file}"]
     try:
@@ -579,10 +579,13 @@ def handleMapleRequest(http_packet):
         response_packet['maple_results'] = keys_json
         response_packet['maple_source'] = maple_id
         response_packet['task_id'] = task_id
-        response_packet = json.dumps(response_packet)
-        response_packet = response_packet.encode(msg_format)
         # Send results back to leader
-        send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, request_type)
+        if (machine_id != "01"):
+            response_packet = json.dumps(response_packet)
+            response_packet = response_packet.encode(msg_format)
+            send_packet('fa23-cs425-5601.cs.illinois.edu', response_packet, file_receiver_port, request_type)
+        else:
+            handleMapleResponse(response_packet)
     except Exception as e:
         logger.error(f"init local/sdfs dir error: {str(e)}")
 
