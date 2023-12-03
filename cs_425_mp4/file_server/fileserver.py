@@ -158,6 +158,7 @@ def put_file(http_packet):
 
             print("Replica_ips ", replica_ips)
             filelocation_list[output_file] = replica_ips
+            print("FILE LOCATION LIST SHARD:", filelocation_list)
             # Store shards
             cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
             # os.remove(output_file)
@@ -399,6 +400,7 @@ def send2Member():
                 sdfs_filename = http_packet['sdfs_filename']
                 replica_ip = http_packet['replica_ip']
                 put_ack[sdfs_filename].append(replica_ip)
+                print("Checking file location list:", filelocation_list)
                 check_list = set(list(fail_detector.membership_list.keys())) & set(filelocation_list[sdfs_filename])
                 remove_task.append(i)
                 if sorted(list(check_list)) == sorted(put_ack[sdfs_filename]) or len(put_ack[sdfs_filename])>=len(check_list): 
