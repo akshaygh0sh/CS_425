@@ -1,4 +1,5 @@
 put /home/vfchen2/MP1/MP1_test/machine1.log machine1.log
+put /home/aaghosh2/CS_425/cs_425_mp4/test_commands test.txt
 # test1
 put /home/vfchen2/mp3/files/file-1.bin file-1.bin
 put /home/vfchen2/mp3/files/file-2.bin file-2.bin
