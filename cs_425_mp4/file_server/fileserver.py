@@ -123,7 +123,7 @@ def put_file(http_packet):
         cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
         # Shard file (for Map reduce)
-        with open(f"/home/aaghosh2/MP4_FILE/{sdfs}", "r") as original_file:
+        with open(local, "r") as original_file:
             lines = original_file.readlines()
         
         LINES_PER_SHARD = 100
