@@ -502,7 +502,7 @@ class Server:
                     with self.writing_lock:
                         self.writing_locks_dict = {}
                     break
-        # Send response, saying that it is ok to write
+        # Send response, saying that it is ok to write 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.sendto(json.dumps(update_response).encode(), (self.index_to_ip(node_from), MESSAGE_PORT_NUM))
         self.acquire_writing_lock(sdfs_file_name)
