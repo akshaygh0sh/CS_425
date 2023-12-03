@@ -115,8 +115,9 @@ def put_file(http_packet):
     sdfs = http_packet['sdfs_filename']
     source = http_packet['request_source']
     print(f"From {str(source)} to {str(host_domain_name)} for {str(sdfs)}")
-    cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP3_FILE/{sdfs}'
+    
     try:
+        cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP3_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
         logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
@@ -126,6 +127,39 @@ def put_file(http_packet):
         return_packet['sdfs_filename'] = http_packet['sdfs_filename']
         return_packet['replica_ip'] = host_domain_name
         send(return_packet, 'put_ack', True)
+
+        # Shard file (for Map reduce)
+        with open(local, "r") as original_file:
+            lines = original_file.readlines()
+        
+        LINES_PER_SHARD = 100
+        total_lines = len(lines)
+        num_shards = (total_lines + LINES_PER_SHARD - 1) // LINES_PER_SHARD
+
+        for shard_num in range(num_shards):
+            start_index = shard_num * LINES_PER_SHARD
+            end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
+
+            output_file = f"{sdfs}_shard_{shard_num + 1}.txt"
+            with open(output_file, 'w') as outfile:
+                outfile.writelines(lines[start_index:end_index])
+
+            print("Test")
+            # Store shards
+            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file} aaghosh2@{source}:/home/aaghosh2/MP4_FILE/{sdfs}'
+            # os.remove(output_file)
+            result = subprocess.check_output(cmd, shell=True)
+            logger.info(f"Complete {str(http_packet)} ")
+            return_packet = {}
+            return_packet['task_id'] = http_packet['task_id']
+            return_packet['request_type'] = 'put_ack'
+            return_packet['request_source'] = http_packet['request_source']
+            return_packet['sdfs_filename'] = output_file
+            return_packet['replica_ip'] = host_domain_name
+            send(return_packet, 'put_ack', True)
+
+
+        
 
     except Exception as e:
         logger.error(f"Command: {cmd}, Error: {str(e)}")
