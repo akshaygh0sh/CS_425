@@ -626,7 +626,7 @@ def handleMapleResponse(http_packet):
         # Maple phase done
         if (len(maple_queue[task_id]["pending_workers"]) == 0):
             sdfs_intermediate_prefix = maple_queue[task_id]["prefix"]
-            separated_key_data = maple_queue[task_id]["accumulated_results"]
+            separated_key_data = separateKeys(maple_queue[task_id]["accumulated_results"])
             for key in separated_key_data:
                 intermediate_file_name = f"{sdfs_intermediate_prefix}_{key}"
                 with open(f"./maple_files/{intermediate_file_name}", "w") as maple_file:
