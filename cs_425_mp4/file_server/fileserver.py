@@ -600,6 +600,7 @@ def sendJuiceRequest(juice_exe, num_juices, sdfs_intermediate_prefix, sdfs_dest_
         ix+=1
         http_packet_bytes = json.dumps(http_packet)
         http_packet_bytes = http_packet_bytes.encode(msg_format)
+        print("Test before sending juice request")
         send_packet(target, http_packet_bytes, file_receiver_port, 'juice')
         print("Finish sending juice request")
 
