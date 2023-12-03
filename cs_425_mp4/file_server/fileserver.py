@@ -671,7 +671,7 @@ if __name__ == "__main__":
 
             elif request_type.lower() == 'maple':
                 maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir = user_input.split(' ')[1], user_input.split(' ')[2], user_input.split(' ')[3], user_input.split(' ')[4]
-                sendMapleRequest(maple_exe, num_maples, sdfs_intermediate_prefix, sdfs_src_dir)
+                sendMapleRequest(maple_exe, num_maples, sdfs_src_dir)
 
             elif request_type.lower() == 'ls':
                 sdfs_filename = user_input.split(' ')[1]
