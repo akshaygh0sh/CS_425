@@ -166,7 +166,7 @@ def put_file(http_packet):
             filelocation_list[output_file] = replica_ips
             print("FILE LOCATION LIST SHARD:", filelocation_list)
             # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {output_file.name} aaghosh2@{source}:/home/aaghosh2/MP3_FILE/{sdfs}'
+            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{output_file.name} /home/aaghosh2/MP3_FILE/{output_file}'
             # os.remove(output_file)
             result = subprocess.check_output(cmd, shell=True)
             logger.info(f"Complete {str(http_packet)} ")
