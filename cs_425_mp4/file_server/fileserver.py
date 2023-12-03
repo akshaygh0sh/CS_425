@@ -122,7 +122,7 @@ def put_file(http_packet):
     try:
         cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{local} /home/aaghosh2/MP3_FILE/{sdfs}'
         result = subprocess.check_output(cmd, shell=True)
-        logger.info(f"Complete {str(http_packet)} ")
+        # logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
         return_packet['task_id'] = http_packet['task_id']
         return_packet['request_type'] = 'put_ack'
@@ -146,7 +146,7 @@ def get_file(http_packet):
     cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/aaghosh2/MP3_FILE/{sdfs} aaghosh2@{source}:{local}'
     try:
         result = subprocess.check_output(cmd, shell=True)
-        logger.info(f"Complete {str(http_packet)} ")
+        # logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
         return_packet['task_id'] = http_packet['task_id']
         return_packet['request_type'] = 'get_ack'
@@ -165,7 +165,7 @@ def delete_file(http_packet):
     cmd = f'rm /home/aaghosh2/MP3_FILE/{sdfs}'
     try:
         result = subprocess.check_output(cmd, shell=True)
-        logger.info(f"Complete {str(http_packet)} ")
+        # logger.info(f"Complete {str(http_packet)} ")
         return_packet = {}
         return_packet['task_id'] = http_packet['task_id']
         return_packet['request_type'] = 'delete_ack'
@@ -185,11 +185,11 @@ def update_file(http_packet):
         if 'payload' in http_packet:
             new_file_location = http_packet['payload']
             filelocation_list.update(new_file_location) # {"machine1.log":[1,2,3]} -> {"machine1.log":[1,2,3], "machine2.log":[]}
-            logger.info(f"File location list update {str(new_file_location)}")
+            # logger.info(f"File location list update {str(new_file_location)}")
         else:
             del_sdfs = http_packet['sdfs_filename']
             del filelocation_list[del_sdfs]
-            logger.info(f"Delete {str(del_sdfs)} Success")
+            # logger.info(f"Delete {str(del_sdfs)} Success")
     except Exception as e:
         logger.error(f'Error {str(e)}')
     
