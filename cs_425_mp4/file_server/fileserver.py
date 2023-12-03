@@ -732,9 +732,8 @@ def handleJuiceResponse(http_packet):
             sdfs_dest_filename = juice_queue[task_id]["sdfs_dest_filename"]
             reduce_data = juice_queue[task_id]["accumulated_results"]
             with open(f"./juice_files/{sdfs_dest_filename}", "w") as juice_file:
-                for key in reduce_data:
-                    juice_file.write(f"({key}, {reduce_data[key]})\n")
-                send2Leader("put", sdfs_dest_filename, f"/home/aaghosh2/CS_425/cs_425_mp4/juice_files/{sdfs_dest_filename}")
+                juice_file.write(reduce_data)
+            send2Leader("put", sdfs_dest_filename, f"/home/aaghosh2/CS_425/cs_425_mp4/juice_files/{sdfs_dest_filename}")
             
             del juice_queue[task_id]
             print("All juice tasks finished.")
