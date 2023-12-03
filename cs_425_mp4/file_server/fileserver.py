@@ -539,7 +539,7 @@ def sendMapleRequest(maple_exe, num_maples, sdfs_src_dir):
     http_packet['map_file'] = sdfs_src_dir
     http_packet['num_maples'] = num_maples
     maple_targets = []
-    members = fail_detector.membership_list
+    members = list(fail_detector.membership_list.keys())
     if len(members) >= num_maples:
         maple_targets = random.sample(members, 4)
     else:
@@ -618,7 +618,6 @@ def handleMapleResponse(http_packet):
             del maple_queue[task_id]
             print("Results saved in ./maple_files/results.txt")
 
-    
 
 def clean_local_sdfs_dir():
     try:
