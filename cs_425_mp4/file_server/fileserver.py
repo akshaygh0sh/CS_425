@@ -129,58 +129,6 @@ def put_file(http_packet):
         return_packet['replica_ip'] = host_domain_name
         send(return_packet, 'put_ack', True)
 
-        # Shard file (for Map reduce)
-        with open(local, "r") as original_file:
-            lines = original_file.readlines()
-        
-        LINES_PER_SHARD = 100
-        total_lines = len(lines)
-        num_shards = (total_lines // LINES_PER_SHARD) + 1
-
-        for shard_num in range(num_shards):
-            start_index = shard_num * LINES_PER_SHARD
-            end_index = min((shard_num + 1) * LINES_PER_SHARD, total_lines)
-
-            output_file = f"shard_{shard_num + 1}_{sdfs}"
-            output_path = ""
-            with open(output_file, 'w') as outfile:
-                outfile.writelines(lines[start_index:end_index])
-                output_path = os.path.abspath(output_file)
-
-            # select to do job
-            members = list(fail_detector.membership_list.keys())
-            members.remove(host_domain_name)
-
-            if output_file in filelocation_list:
-                replica_ips = filelocation_list[output_file]
-            else:
-                if len(members) >= 4:
-                    replica_ips = random.sample(members, 4)
-                else:
-                    replica_ips = random.sample(members, len(members))
-            location_packet = {}
-            location_packet['task_id'] = host_domain_name + '_'+str(datetime.datetime.now())  
-            location_packet['request_type'] = 'update'
-            location_packet['sdfs_filename'] = output_file
-            location_packet['payload'] = {output_file:replica_ips}
-            send(location_packet, 'update', False)
-
-            print("Replica_ips ", replica_ips)
-            filelocation_list[output_file] = replica_ips
-            print("FILE LOCATION LIST SHARD:", filelocation_list)
-            # Store shards
-            cmd = f'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null aaghosh2@{source}:{output_path} /home/aaghosh2/MP3_FILE/{output_file}'
-            # os.remove(output_file)
-            result = subprocess.check_output(cmd, shell=True)
-            logger.info(f"Complete {str(http_packet)} ")
-            return_packet = {}
-            return_packet['task_id'] = http_packet['task_id']
-            return_packet['request_type'] = 'put_ack'
-            return_packet['request_source'] = http_packet['request_source']
-            return_packet['sdfs_filename'] = output_file
-            return_packet['replica_ip'] = host_domain_name
-            send(return_packet, 'put_ack', True)
-
     except Exception as e:
         logger.error(f"Command: {cmd}, Error: {str(e)}")
 
