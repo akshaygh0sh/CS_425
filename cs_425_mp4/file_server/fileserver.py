@@ -602,16 +602,15 @@ def handleMapleRequest(http_packet):
 def separateKeys(data):
     data = data.split('\n')
     key_info = {}
-    print("Separated Key data:", data)
     for line in data:
-        print("Line:", line)
-        pair = line.strip("()")
-        pair = pair.split(", ")
-        key, value = pair[0], pair[1]
-        if (key in key_info):
-            key_info[key].append(value)
-        else:
-            key_info[key] = [value]
+        if (line != ""):
+            pair = line.strip("()")
+            pair = pair.split(", ")
+            key, value = pair[0], pair[1]
+            if (key in key_info):
+                key_info[key].append(value)
+            else:
+                key_info[key] = [value]
     return key_info
 
 
