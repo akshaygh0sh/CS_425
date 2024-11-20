@@ -13,7 +13,7 @@ class Node:
         "5"
     ]
     # Set heartbeat interval to 1 second
-    HEARBEAT_INTERVAL = 1
+    HEARTBEAT_INTERVAL = 1
     T_FAIL = 3
     T_CLEANUP = 1
 
@@ -177,7 +177,7 @@ class Node:
 
                             self.logger.info(f"Machine {self.id} disseminating membership list: {self.member_list}")
                             self.gossip(self.member_list)
-                time.sleep(self.HEARBEAT_INTERVAL)
+                time.sleep(self.HEARTBEAT_INTERVAL)
             except Exception as e:
                 traceback.print_exc()
                 print("Error while sending heartbeats:", e)
