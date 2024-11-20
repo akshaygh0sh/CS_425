@@ -2,27 +2,23 @@ import threading
 import socket
 import datetime, time
 import random, logging, json, sys, traceback
+import argparse
 
 class Node:
     MACHINE_LIST = [
-        "fa23-cs425-5601.cs.illinois.edu",
-        "fa23-cs425-5602.cs.illinois.edu",
-        "fa23-cs425-5603.cs.illinois.edu",
-        "fa23-cs425-5604.cs.illinois.edu",  
-        "fa23-cs425-5605.cs.illinois.edu",
-        "fa23-cs425-5606.cs.illinois.edu",
-        "fa23-cs425-5607.cs.illinois.edu",
-        "fa23-cs425-5608.cs.illinois.edu",
-        "fa23-cs425-5609.cs.illinois.edu",
-        "fa23-cs425-5610.cs.illinois.edu"
+        "1",
+        "2",
+        "3", 
+        "4",
+        "5"
     ]
-
     # Set heartbeat interval to 1 second
     HEARBEAT_INTERVAL = 1
     T_FAIL = 3
     T_CLEANUP = 1
 
-    def __init__(self):
+    def __init__(self, udp_port):
+        self.udp_port = udp_port
         self.ip, self.current_machine_ix,  = self.get_info()
         self.LOG_FILE = f"MP2_machine_{self.current_machine_ix}.log"
         self.logger = logging.getLogger("MP2_Logger")
@@ -58,22 +54,23 @@ class Node:
     def get_info(self):
         try:
             hostname = socket.gethostname()
-            current_machine_ix = hostname[13 : 15]
-            local_ip = socket.gethostbyname(hostname)
+            current_machine_ix = self.udp_port
+            local_ip = socket.gethostname()
             return local_ip, int(current_machine_ix)
         except Exception as e:
             print("Error:", e)
     
     # Update the ID of the node (used for when attempting to join membership list)
     def update_id(self):
-        current_timestamp = datetime.datetime.now()
-        formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H%M%S")
-        return f"{self.ip}@{formatted_timestamp}:{self.current_machine_ix}"
+        # current_timestamp = datetime.datetime.now()
+        # formatted_timestamp = current_timestamp.strftime("%Y-%m-%d %H%M%S")
+        # return f"{self.ip}@{formatted_timestamp}:{self.current_machine_ix}"
+        return f"{self.ip}:{self.current_machine_ix}"
 
     def listen(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         local_ip = "0.0.0.0"
-        local_udp_port = 49153
+        local_udp_port = self.udp_port
 
         # Bind socket to local port
         udp_socket.bind((local_ip, local_udp_port))
@@ -185,7 +182,7 @@ class Node:
                 traceback.print_exc()
                 print("Error while sending heartbeats:", e)
     
-    # Triggers a gossip round (sends to N/2 random machines)
+    # Triggers a gossip round
     def gossip(self, message):
         target_machines = list(self.member_list.keys()) if self.is_active else list(message.keys())
         target_machines = [int(id.split(":")[1]) for id in target_machines if id != "suspicion"]
@@ -196,7 +193,7 @@ class Node:
         # # print(f"Machine #{self.current_machine_ix} gossiping to: {target_machines}")
         for machine_ix in target_machines:
             self.send(machine_ix, message)
-        # bandwidth_bytes_per_second /= len(target_machines)
+        # bandwidth_bytes_per_second /= len(target_machines) 
         
         # with open("out_going_bandwidth.txt", "a+") as file:
         #     file.write(f"{bandwidth_bytes_per_second}\n")
@@ -227,8 +224,8 @@ class Node:
     # Sends a message via UDP to machine #<machine_ix>
     def send(self, machine_ix, message):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        machine = self.MACHINE_LIST[machine_ix - 1]
-        remote_port = 49153
+        machine = "Asus-ZephryusG14"
+        remote_port = int(self.MACHINE_LIST[machine_ix-1])
         bandwidth_bytes_per_second = float(0.0)
         try:
             to_send = json.dumps(message).encode()
@@ -305,7 +302,13 @@ def prompt_user(node):
 
 
 if __name__ == "__main__":
-    current_device = Node()
+    parser = argparse.ArgumentParser(description='Port to listen for packets on')
+    parser.add_argument('--udp-port', type=int, default=1,
+                    help='UDP port to use for listening (default: 1)')
+
+    args = parser.parse_args()
+    current_device = Node(args.udp_port)
+
     # Create a thread for user input
     listen_thread = threading.Thread(target=current_device.listen, args=())
     listen_thread.daemon = True  # Set the thread as a daemon so it doesn't block program exit
