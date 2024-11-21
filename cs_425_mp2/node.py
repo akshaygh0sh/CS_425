@@ -15,7 +15,7 @@ class Node:
     # Set heartbeat interval to 1 second
     HEARTBEAT_INTERVAL = 1
     T_FAIL = 3
-    T_CLEANUP = 1
+    T_CLEANUP = 3
 
     def __init__(self, udp_port):
         self.udp_port = udp_port
